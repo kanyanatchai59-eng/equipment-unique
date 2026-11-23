@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>EQUIPMENT Unique</title>
+<link rel="icon" href="assets/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -11,23 +12,29 @@
 <style>
 :root{--red:#95191F;--red2:#7a1419;--ink:#1d1d1f;--mut:#6b6b70;--line:#e6e2df;--bg:#f6f4f2;--ok:#1E7A46;--okbg:#e7f4ec;--warn:#A15C07;--warnbg:#fdf1e0;--bad:#b3261e;--badbg:#fbe9e8;--blue:#1F4E8C;--bluebg:#e8eef8}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans Thai',system-ui,-apple-system,sans-serif;font-size:16px;line-height:1.45}
+html,body{margin:0;position:relative;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans Thai',system-ui,-apple-system,sans-serif;font-size:16px;line-height:1.45}
 button,input,select,textarea{font:inherit;color:inherit}
-.top{position:sticky;top:0;z-index:5;background:var(--red);color:#fff;padding:12px 16px calc(12px);display:flex;align-items:center;gap:10px;box-shadow:0 1px 0 rgba(0,0,0,.08)}
-.top .back{background:none;border:0;color:#fff;font-size:22px;padding:2px 8px 2px 0;cursor:pointer;line-height:1}
-.top h1{font-size:17px;font-weight:600;margin:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.top .lang{background:rgba(255,255,255,.16);border:0;color:#fff;border-radius:8px;padding:4px 10px;font-size:13px;font-weight:600;cursor:pointer}
-main{padding:14px 14px 110px;max-width:560px;margin:0 auto}
+/* header: same look as the signing-queue app (UNIQUE logo on a white card over a red band) */
+.band{position:absolute;left:0;right:0;top:0;height:200px;background:var(--red);z-index:0}
+.hdr{position:sticky;top:10px;z-index:5;width:calc(100% - 24px);max-width:560px;margin:10px auto 0;background:rgba(255,255,255,.97);border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.14);display:flex;align-items:center;gap:8px;padding:9px 12px;min-height:62px}
+.hdr .back{border:0;background:none;color:var(--red);font-size:30px;line-height:1;padding:0 4px 4px 0;cursor:pointer}
+.logo{display:flex;align-items:center;gap:6px;flex:none}.logo svg{display:block}
+.hdr .app{font-size:11.5px;font-weight:700;color:var(--red);letter-spacing:.6px;border-left:1.5px solid var(--line);padding-left:8px;line-height:1.15}
+.hdr .lang{margin-left:auto;min-height:42px;min-width:42px;padding:0 8px;border-radius:12px;border:1.5px solid var(--line);background:#fff;color:var(--ink);font-weight:600;font-size:14px;cursor:pointer}
+.ptitle{position:relative;z-index:1;max-width:560px;margin:0 auto;padding:16px 16px 2px;color:#fff}
+.ptitle h1{font-size:21px;font-weight:600;margin:0;line-height:1.3;overflow-wrap:anywhere}
+main{position:relative;z-index:1;padding:10px 14px 110px;max-width:560px;margin:0 auto}
 .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;margin:0 0 12px}
 .card h2{font-size:15px;margin:0 0 8px;font-weight:600}
 .hint{color:var(--mut);font-size:13px}
-.big{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 12px}
-.tile{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 12px;text-align:left;cursor:pointer;min-height:96px;display:flex;flex-direction:column;justify-content:space-between}
-.tile b{font-size:16px;font-weight:600}
-.tile span{font-size:12px;color:var(--mut)}
-.tile .ic{font-size:24px;line-height:1}
-.tile.main{background:var(--red);color:#fff;border-color:var(--red);grid-column:span 2;min-height:84px;flex-direction:row;align-items:center;justify-content:flex-start;gap:14px}
-.tile.main span{color:#ffffffcc}
+.big{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:0 0 12px}
+.tile{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 8px 14px;text-align:center;cursor:pointer;min-height:118px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:8px}
+.tile b{font-size:15px;font-weight:600;line-height:1.3}
+.tile span.s{font-size:12px;color:var(--mut);line-height:1.3}
+.ic{width:48px;height:48px;border-radius:14px;background:#FBECED;color:var(--red);display:grid;place-items:center;flex:none}
+.ic svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.tile.main .ic{background:var(--red);color:#fff}
+.hello{color:#fff;opacity:.85;font-size:14px;margin-top:2px}
 .btn{display:block;width:100%;border:0;border-radius:12px;padding:13px 14px;font-weight:600;font-size:16px;cursor:pointer;background:var(--red);color:#fff;text-align:center}
 .btn:disabled{opacity:.45;cursor:default}
 .btn.sec{background:#fff;color:var(--red);border:1.5px solid var(--red)}
@@ -65,7 +72,7 @@ label.l{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
 .empty{color:var(--mut);text-align:center;padding:18px 6px;font-size:14px}
 .toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;z-index:20;max-width:90%;text-align:center;opacity:0;transition:opacity .2s;pointer-events:none}
 .toast.on{opacity:1}.toast.err{background:var(--bad)}
-.spin{width:28px;height:28px;border:3px solid #e8d9d9;border-top-color:var(--red);border-radius:50%;animation:s 0.8s linear infinite;margin:40px auto}
+.spin{width:28px;height:28px;border:3px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:s 0.8s linear infinite;margin:40px auto}
 @keyframes s{to{transform:rotate(360deg)}}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px}
 .kv dt{color:var(--mut)}.kv dd{margin:0}
@@ -84,7 +91,9 @@ a{color:var(--red)}
 </style>
 </head>
 <body>
-<div class="top"><button class="back" id="back" hidden aria-label="Back">‹</button><h1 id="title">EQUIPMENT Unique</h1><button class="lang" id="lang">EN</button></div>
+<div class="band"></div>
+<header class="hdr"><button class="back" id="back" hidden aria-label="Back">‹</button><span class="logo" aria-label="UNIQUE"><svg width="36" height="34" viewBox="0 0 48 46" aria-hidden="true"><path fill="#95191F" fill-rule="evenodd" clip-rule="evenodd" d="M2.98725 12.0055L10.2304 22.0216L23.2599 12.5862L20.5604 10.6209L23.3734 6.75285L18.8475 0.5L2.98725 12.0055ZM21.2197 10.5391L28.4751 0.53186L44.3441 12.0254L39.816 18.2766L35.2659 16.8075L34.2406 19.9864L21.2197 10.5391ZM47.3033 21.2105L35.5566 17.3753L30.5693 32.6748H33.9079V37.4585L41.2445 39.8503L47.3033 21.2105ZM33.4545 33.1284H17.3388L18.4104 36.3038L13.8766 37.7472V45.5H33.4545V33.1284ZM17.8295 36.0419L6.07944 39.8668L0 21.2337L7.33662 18.842L10.1533 22.7074L12.851 20.7396L17.8295 36.0419ZM18.5326 19.8887H21.6651V27.1054C21.6514 27.5453 22.036 28.4251 23.6847 28.4251C25.3334 28.4251 25.6631 27.5453 25.6219 27.1054V19.8887H28.7544V27.1054C28.7544 28.4251 27.7075 30.6107 23.6847 30.6107C19.4394 30.6107 18.5326 28.3426 18.5326 27.1054V19.8887Z"/></svg><svg width="96" height="22" viewBox="0 0 130 30" aria-hidden="true"><path fill="#000" fill-rule="evenodd" clip-rule="evenodd" d="M85.0914 9.00952C85.0914 1.95512 79.153 0.59375 74.3281 0.59375C69.6268 0.59375 63.5647 2.07889 63.5647 8.01943V18.9104C63.5647 24.9747 69.7505 26.3361 72.9672 26.4599C72.9672 28.5391 74.6167 29.0589 75.4415 29.0589H85.2152V26.0886H80.8851C79.7716 26.0886 79.5242 25.4698 79.5242 25.2223C79.5242 25.0242 79.7716 24.8922 79.8953 24.851C84.5966 24.1084 85.0914 20.8906 85.0914 18.4154V9.00952ZM74.3281 4.80161C73.2393 4.80161 72.9672 5.87421 72.9672 6.41051V20.6431C72.9672 21.2619 73.0909 22.4995 74.4518 22.4995C75.4415 22.4995 75.6889 21.2619 75.6889 20.6431V6.41051C75.6889 5.87421 75.4168 4.80161 74.3281 4.80161Z"/><path fill="#000" d="M0.963867 1.08892H10.3664V20.767C10.3664 21.5095 10.4901 22.4996 11.7272 22.4996C13.0881 22.4996 13.2119 21.5095 13.2119 20.767V1.08892H22.7381V19.5294C22.7381 22.1284 20.4369 26.8313 11.7272 26.8313C4.05679 26.8313 0.963867 23.4897 0.963867 19.5294V1.08892Z"/><path fill="#000" d="M26.3258 1.08892H34.6149L39.1924 12.475V1.08892H47.1103V26.46H39.6873L34.12 14.9502V26.46H26.3258V1.08892Z"/><path fill="#000" d="M60.1006 1.08892H50.8218V26.46H60.1006V1.08892Z"/><path fill="#000" d="M98.0817 1.08892H88.6792V19.5294C88.6792 23.4897 91.7721 26.8313 99.4426 26.8313C108.152 26.8313 110.453 22.8709 110.453 19.5294V1.08892H100.927V20.767C100.927 21.5095 100.803 22.4996 99.4426 22.4996C98.2054 22.4996 98.0817 21.5095 98.0817 20.767V1.08892Z"/><path fill="#000" d="M113.794 1.08892H129.258V6.16314H123.073V11.1136H128.887V15.9403H123.073V21.6333H130.001V26.46H113.794V1.08892Z"/></svg></span><span class="app">EQUIPMENT</span><button class="lang" id="lang">EN</button></header>
+<div class="ptitle"><h1 id="title"></h1><div class="hello" id="sub" hidden></div></div>
 <main id="app"><div class="spin"></div></main>
 <div class="bar" id="bar" hidden><div class="in" id="barIn"></div></div>
 <div class="toast" id="toast"></div>
@@ -130,7 +139,7 @@ const COND = { OK: ['ปกติ', 'OK'], DAMAGED: ['ชำรุด', 'Damaged
 /* ---------- ui helpers ---------- */
 let toastT;
 function toast(msg, err) { const t = $('#toast'); t.textContent = msg; t.className = 'toast on' + (err ? ' err' : ''); clearTimeout(toastT); toastT = setTimeout(() => t.className = 'toast', err ? 4200 : 2400); }
-function setTop(title, canBack) { $('#title').textContent = title; $('#back').hidden = !canBack; $('#lang').textContent = S.lang === 'en' ? 'TH' : 'EN'; }
+function setTop(title, canBack, sub) { $('#title').textContent = title; $('#sub').textContent = sub || ''; $('#sub').hidden = !sub; $('#back').hidden = !canBack; $('#lang').textContent = S.lang === 'en' ? 'TH' : 'EN'; }
 function bar(html) { const b = $('#bar'); if (!html) { b.hidden = true; $('#barIn').innerHTML = ''; return; } b.hidden = false; $('#barIn').innerHTML = html; }
 function loading() { app.innerHTML = '<div class="spin"></div>'; bar(''); }
 function go(view, arg, replace) { if (!replace && S.cur) S.stack.push(S.cur); S.cur = { view, arg }; render(); window.scrollTo(0, 0); }
@@ -224,6 +233,15 @@ function relogin() {
   try { if (liff.isLoggedIn()) liff.logout(); } catch (e) {}
   liff.login({ redirectUri: location.href });
 }
+const IC = {
+  scan: '<path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/>',
+  ret: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
+  rep: '<path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5M3 21v-5h5"/>',
+  chart: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  ticket: '<path d="M4 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4z"/><path d="M14 5v14"/>'
+};
+const scanIco = '<svg viewBox="0 0 24 24" style="width:20px;height:20px;vertical-align:-4px;margin-right:6px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" aria-hidden="true"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg>';
+const ico = n => `<span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true">${IC[n]}</svg></span>`;
 const isStaff = () => S.me && S.me.user && (S.me.user.role === 'ADMIN' || S.me.user.role === 'CHECKER');
 
 function render() {
@@ -263,7 +281,7 @@ VIEWS.register = (st) => {
   };
 };
 VIEWS.pending = () => {
-  setTop('EQUIPMENT Unique');
+  setTop(tr('ลงทะเบียน', 'Register'));
   const u = S.me && S.me.user || {};
   app.innerHTML = `<div class="card center"><div style="font-size:40px">⏳</div><h2>${tr('รอผู้ดูแลอนุมัติ', 'Waiting for approval')}</h2>
   <p class="hint">${esc(u.name || '')} ${u.empId ? '(' + esc(u.empId) + ')' : ''}<br>${tr('ระบบแจ้งผู้ดูแลแล้ว เมื่ออนุมัติจะมีข้อความแจ้งใน LINE', 'The admin has been told. You will get a LINE message when it is approved.')}</p>
@@ -272,25 +290,27 @@ VIEWS.pending = () => {
 
 /* ---------- home ---------- */
 VIEWS.home = () => {
-  setTop('EQUIPMENT Unique');
   const m = S.me, u = m.user;
+  const nm = S.lang === 'en' && u.nameEn ? u.nameEn : (u.nickname ? u.nickname : u.name);
+  setTop(tr('สวัสดี คุณ', 'Hello, ') + nm, false, tr('ระบบเบิก-คืนอุปกรณ์ Survey', 'Survey equipment borrow & return') + (isStaff() ? ' · ' + (u.role === 'ADMIN' ? tr('ผู้ดูแล', 'Admin') : tr('ผู้ตรวจรับ', 'Checker')) : ''));
   const open = m.openTickets || [];
-  const cartN = S.cart.length;
+  const cartN = selCodes().length;
   app.innerHTML = `
-  <div class="card"><div class="row"><div class="grow"><div class="hint">${tr('สวัสดี', 'Hello')}</div><b style="font-size:18px">${esc(S.lang === 'en' && u.nameEn ? u.nameEn : u.name)}</b></div>${isStaff() ? `<span class="badge b-blue">${u.role === 'ADMIN' ? tr('ผู้ดูแล', 'Admin') : tr('ผู้ตรวจรับ', 'Checker')}</span>` : ''}</div></div>
+  <div class="card"><div class="kh"><h2 style="margin:0">${tr('อุปกรณ์ที่ยืมอยู่', 'On loan to you')}</h2>${open.length ? `<button class="btn small ghost" id="tMine">${tr('ทั้งหมด', 'All')}</button>` : ''}</div>
+  ${open.length ? open.map(tCard).join('') : `<div class="empty">${tr('ยังไม่มีอุปกรณ์ที่ยืมอยู่', 'Nothing on loan right now')}</div>`}</div>
   <div class="big">
-    <button class="tile main" id="tBorrow"><span class="ic">📷</span><div><b>${tr('เบิกอุปกรณ์', 'Borrow equipment')}</b><br><span>${cartN ? tr(`มีของในตะกร้า ${cartN} ชิ้น`, `${cartN} item(s) in cart`) : tr('สแกน QR บนกล่องหรืออุปกรณ์', 'Scan the QR on the case or item')}</span></div></button>
-    <button class="tile" id="tReturn"><span class="ic">↩️</span><div><b>${tr('คืนอุปกรณ์', 'Return')}</b><br><span>${open.length ? tr(`ค้างคืน ${open.length} ใบ`, `${open.length} open`) : tr('ไม่มีรายการค้าง', 'Nothing to return')}</span></div></button>
-    <button class="tile" id="tRepeat"><span class="ic">🔁</span><div><b>${tr('เบิกเหมือนครั้งก่อน', 'Same as last time')}</b><br><span>${tr('ดึงรายการล่าสุดมาใส่ตะกร้า', 'Load your last list')}</span></div></button>
+    <button class="tile main" id="tBorrow">${ico('scan')}<b>${tr('เบิกอุปกรณ์', 'Borrow')}</b><span class="s">${cartN ? tr(`ในตะกร้า ${cartN} ชิ้น`, `${cartN} in cart`) : tr('สแกน QR', 'Scan QR')}</span></button>
+    <button class="tile" id="tReturn">${ico('ret')}<b>${tr('คืนอุปกรณ์', 'Return')}</b><span class="s">${open.length ? tr(`ค้าง ${open.length} ใบ`, `${open.length} open`) : tr('ไม่มีค้าง', 'None open')}</span></button>
+    <button class="tile" id="tRepeat">${ico('rep')}<b>${tr('เบิกเหมือนเดิม', 'Same as last')}</b><span class="s">${tr('รายการล่าสุด', 'Last list')}</span></button>
   </div>
-  ${isStaff() ? `<button class="card tk" id="tAdmin" style="width:100%;text-align:left"><div><b>${tr('ภาพรวมสำหรับผู้ดูแล', 'Admin overview')}</b><div class="hint">${tr('ค้างคืน', 'Overdue')} ${m.overdue || 0} · ${tr('รออนุมัติ', 'Pending')} ${m.pendingUsers || 0} · ${tr('แจ้งปัญหา', 'Issues')} ${m.openIssues || 0}</div></div><span>›</span></button>
-  <button class="card tk" id="tScanT" style="width:100%;text-align:left"><div><b>${tr('สแกนใบเบิก / อุปกรณ์', 'Scan a ticket or item')}</b><div class="hint">${tr('ตรวจส่งมอบ ตรวจรับคืน หรือดูว่าใครยืมอยู่', 'Confirm hand-over, receive returns or see who has it')}</div></div><span>›</span></button>` : ''}
-  <div class="card"><div class="kh"><h2 style="margin:0">${tr('รายการที่ยืมอยู่', 'On loan to you')}</h2><button class="btn small ghost" id="tMine">${tr('ทั้งหมด', 'All')}</button></div>
-  ${open.length ? open.map(tCard).join('') : `<div class="empty">${tr('ไม่มีอุปกรณ์ที่ยืมอยู่', 'You have nothing on loan')}</div>`}</div>`;
+  ${isStaff() ? `<div class="big" style="grid-template-columns:1fr 1fr">
+    <button class="tile" id="tAdmin">${ico('chart')}<b>${tr('ภาพรวม', 'Overview')}</b><span class="s">${tr('ค้างคืน', 'Overdue')} ${m.overdue || 0} · ${tr('รออนุมัติ', 'Pending')} ${m.pendingUsers || 0} · ${tr('แจ้งปัญหา', 'Issues')} ${m.openIssues || 0}</span></button>
+    <button class="tile" id="tScanT">${ico('ticket')}<b>${tr('สแกนใบเบิก', 'Scan ticket')}</b><span class="s">${tr('ตรวจส่งมอบ / รับคืน', 'Hand-over / receive')}</span></button>
+  </div>` : ''}`;
   $('#tBorrow').onclick = () => go('borrow');
   $('#tReturn').onclick = startReturn;
   $('#tRepeat').onclick = repeatLast;
-  $('#tMine').onclick = () => go('mine');
+  if ($('#tMine')) $('#tMine').onclick = () => go('mine');
   if ($('#tAdmin')) $('#tAdmin').onclick = () => go('admin');
   if ($('#tScanT')) $('#tScanT').onclick = staffScan;
   bindTk();
@@ -351,7 +371,7 @@ VIEWS.borrow = () => {
   setTop(tr('เบิกอุปกรณ์', 'Borrow'), true);
   const n = selCodes().length;
   app.innerHTML = `
-  <div class="card"><div class="row"><button class="btn" id="scan">📷 ${tr('สแกน QR', 'Scan QR')}</button></div>
+  <div class="card"><div class="row"><button class="btn" id="scan">${scanIco}${tr('สแกน QR', 'Scan QR')}</button></div>
   <div class="row" style="margin-top:8px"><input class="t grow" id="code" placeholder="${tr('หรือพิมพ์รหัส เช่น UN-SV-GN-001-RC-001', 'or type a code, e.g. UN-SV-GN-001-RC-001')}" autocapitalize="characters"><button class="btn small ghost" id="add">${tr('เพิ่ม', 'Add')}</button></div>
   ${S.scanOk ? '' : `<p class="hint" style="margin:8px 0 0">${tr('สแกนในตัวได้เมื่อเปิดจากแอป LINE บนมือถือ ใช้กล้องมือถือสแกน QR บนอุปกรณ์ได้เช่นกัน', 'Built-in scanning works in the LINE app on a phone. You can also scan the QR with your phone camera.')}</p>`}</div>
   ${S.cart.length ? S.cart.map(cartGroup).join('') : `<div class="card empty">${tr('ยังไม่มีอุปกรณ์ในตะกร้า สแกน QR บนกล่องเพื่อดึงทั้งชุด หรือสแกนทีละชิ้น', 'The cart is empty. Scan the case QR for a whole set, or scan items one by one.')}</div>`}`;
@@ -489,7 +509,7 @@ async function startReturn() {
 VIEWS.pickReturn = (m) => {
   setTop(tr('คืนอุปกรณ์', 'Return'), true);
   app.innerHTML = m.open.length ? `<div class="card"><h2>${tr('เลือกใบเบิกที่จะคืน', 'Choose a ticket to return')}</h2>${m.open.map(tCard).join('')}</div>
-  <div class="card"><button class="btn sec" id="sc">📷 ${tr('หรือสแกนอุปกรณ์ที่จะคืน', 'Or scan an item to return')}</button></div>` : `<div class="card empty">${tr('ไม่มีอุปกรณ์ที่ยืมอยู่', 'You have nothing on loan')}</div>`;
+  <div class="card"><button class="btn sec" id="sc">${scanIco}${tr('หรือสแกนอุปกรณ์ที่จะคืน', 'Or scan an item to return')}</button></div>` : `<div class="card empty">${tr('ไม่มีอุปกรณ์ที่ยืมอยู่', 'You have nothing on loan')}</div>`;
   if ($('#sc')) $('#sc').onclick = async () => { const v = await scanOnce(); if (v) scanned(v); };
   document.querySelectorAll('[data-t]').forEach(el => el.onclick = () => go('return', el.dataset.t));
 };
@@ -506,7 +526,7 @@ VIEWS.return = async (id) => {
   const n = out.filter(i => R[i.code] && R[i.code].on).length;
   app.innerHTML = `
   <div class="card"><div class="row"><div class="grow hint">${tr('ติ๊กเฉพาะชิ้นที่คืนตอนนี้ เลือกสภาพของแต่ละชิ้น', 'Tick what you are returning now and set each item’s condition')}</div></div>
-  <div class="row" style="margin-top:8px"><button class="btn small sec" id="sc">📷 ${tr('สแกนติ๊กทีละชิ้น', 'Scan to tick')}</button><button class="btn small ghost" id="all">${n === out.length ? tr('ไม่เลือกทั้งหมด', 'Untick all') : tr('เลือกทั้งหมด', 'Tick all')}</button></div></div>
+  <div class="row" style="margin-top:8px"><button class="btn small sec" id="sc">${scanIco}${tr('สแกนติ๊กทีละชิ้น', 'Scan to tick')}</button><button class="btn small ghost" id="all">${n === out.length ? tr('ไม่เลือกทั้งหมด', 'Untick all') : tr('เลือกทั้งหมด', 'Tick all')}</button></div></div>
   <div class="card">${out.map((i, k) => { const r = R[i.code]; return `<div class="item"><input type="checkbox" class="chk" data-c="${esc(i.code)}" ${r.on ? 'checked' : ''}>
     <div class="grow"><div class="nm">${esc(i.name)}</div><div class="cd">${esc(i.code)}</div>
     ${r.on ? `<div class="seg">${Object.keys(COND).map(c => `<button data-cc="${esc(i.code)}" data-v="${c}" class="${r.cond === c ? 'on' : ''} ${c === 'DAMAGED' ? 'd' : c === 'LOST' ? 'lo' : ''}">${esc(tr(COND[c][0], COND[c][1]))}</button>`).join('')}</div>
