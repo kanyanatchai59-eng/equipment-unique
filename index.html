@@ -88,6 +88,12 @@ label.l{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
 .errbox{background:var(--badbg);color:#7d1a14;border-radius:10px;padding:8px 10px;font-size:13px;margin-top:8px}
 .okbox{background:var(--okbg);color:#14532d;border-radius:10px;padding:10px 12px;font-size:14px}
 a{color:var(--red)}
+.cam{position:fixed;inset:0;background:#000;z-index:50;display:flex;align-items:center;justify-content:center}
+.cam video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cam .frame{position:relative;width:min(68vw,300px);height:min(68vw,300px);border-radius:20px;box-shadow:0 0 0 9999px rgba(0,0,0,.45);border:3px solid #fff}
+.cam .ctop{position:absolute;top:calc(18px + env(safe-area-inset-top));left:0;right:0;text-align:center;color:#fff;font-weight:600;font-size:16px;padding:0 16px}
+.cam .cbot{position:absolute;left:0;right:0;bottom:calc(18px + env(safe-area-inset-bottom));display:flex;gap:10px;justify-content:center;padding:0 16px}
+.cam .cbot .btn{width:auto;flex:1;max-width:200px}
 </style>
 </head>
 <body>
@@ -98,7 +104,7 @@ a{color:var(--red)}
 <div class="bar" id="bar" hidden><div class="in" id="barIn"></div></div>
 <div class="toast" id="toast"></div>
 <script>
-/* EQUIPMENT Unique LIFF app v1.0.0 */
+/* EQUIPMENT Unique LIFF app v1.0.2 */
 const CFG = {
   liffId: '2012756966-P652TGXb',
   api: 'https://script.google.com/macros/s/AKfycbz93ANL2K0AULfT4SueRfPgsoqVe89BhoPKeZqixdsBppBkmdbFBK3D5Lsp2iAj35gc/exec'
@@ -322,13 +328,80 @@ function tCard(t) {
 function bindTk() { document.querySelectorAll('[data-t]').forEach(el => el.onclick = () => go('ticket', el.dataset.t)); }
 
 /* ---------- scanning ---------- */
+/* Scan a QR: LINE's own scanner inside the LINE app; elsewhere (Chrome, Safari, LINE in-app browser
+   without scanCodeV2) the phone/computer camera inside the page; typing the code is the last fallback. */
 async function scanOnce() {
   if (S.scanOk) {
     try { const r = await liff.scanCodeV2(); return r && r.value ? r.value : ''; }
-    catch (e) { toast(tr('เปิดกล้องไม่ได้ พิมพ์รหัสแทนได้', 'Camera unavailable. Type the code instead.'), true); return ''; }
+    catch (e) { /* fall through to the in-page camera */ }
   }
+  const v = await camScan();
+  if (v !== null) return v;
+  return typeCode();
+}
+function typeCode() {
   const v = prompt(tr('พิมพ์รหัสอุปกรณ์ หรือเลขใบเบิก', 'Type the equipment code or ticket number'));
   return v || '';
+}
+let jsqrP = null;
+function loadJsQR() {
+  if (window.jsQR) return Promise.resolve();
+  if (!jsqrP) jsqrP = new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js'; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+  return jsqrP;
+}
+/* resolves with the text read, '' if the person closed it, or null if no camera can be used */
+function camScan() {
+  return new Promise(async (resolve) => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return resolve(null);
+    const ov = document.createElement('div');
+    ov.className = 'cam';
+    ov.innerHTML = `<video playsinline muted autoplay></video><div class="frame"></div>
+      <div class="ctop">${tr('เล็ง QR ให้อยู่ในกรอบ', 'Point the camera at the QR code')}</div>
+      <div class="cbot"><button class="btn ghost" data-k="type">${tr('พิมพ์รหัสแทน', 'Type the code')}</button><button class="btn sec" data-k="close">${tr('ปิด', 'Close')}</button></div>`;
+    document.body.appendChild(ov);
+    const video = ov.querySelector('video');
+    let stream = null, done = false, timer = null;
+    const finish = (val) => {
+      if (done) return; done = true; clearTimeout(timer);
+      if (stream) stream.getTracks().forEach(tk => tk.stop());
+      ov.remove(); resolve(val);
+    };
+    ov.querySelector('[data-k=close]').onclick = () => finish('');
+    ov.querySelector('[data-k=type]').onclick = () => { if (stream) stream.getTracks().forEach(tk => tk.stop()); finish(typeCode()); };
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+    } catch (e) {
+      ov.remove();
+      toast(tr('เปิดกล้องไม่ได้ (ยังไม่อนุญาตกล้อง หรือเครื่องไม่มีกล้อง) พิมพ์รหัสแทนได้', 'Could not open the camera (no permission or no camera). You can type the code.'), true);
+      return resolve(null);
+    }
+    if (done) { stream.getTracks().forEach(tk => tk.stop()); return; }
+    video.srcObject = stream;
+    try { await video.play(); } catch (e) {}
+    let detector = null;
+    try { if ('BarcodeDetector' in window && (await BarcodeDetector.getSupportedFormats()).includes('qr_code')) detector = new BarcodeDetector({ formats: ['qr_code'] }); } catch (e) {}
+    if (!detector) { try { await loadJsQR(); } catch (e) { finish(null); return; } }
+    const cv = document.createElement('canvas'), cx = cv.getContext('2d', { willReadFrequently: true });
+    const tick = async () => {
+      if (done) return;
+      try {
+        if (video.readyState >= 2 && video.videoWidth) {
+          let text = '';
+          if (detector) {
+            const r = await detector.detect(video); if (r && r.length) text = r[0].rawValue;
+          } else {
+            const w = 640, h = Math.round(640 * video.videoHeight / video.videoWidth);
+            cv.width = w; cv.height = h; cx.drawImage(video, 0, 0, w, h);
+            const img = cx.getImageData(0, 0, w, h);
+            const r = window.jsQR(img.data, w, h, { inversionAttempts: 'dontInvert' }); if (r && r.data) text = r.data;
+          }
+          if (text) { try { navigator.vibrate && navigator.vibrate(60); } catch (e) {} return finish(text); }
+        }
+      } catch (e) {}
+      timer = setTimeout(tick, 120);
+    };
+    tick();
+  });
 }
 async function staffScan() { const v = await scanOnce(); if (v) scanned(v, 'staff'); }
 async function scanned(raw, mode) {
@@ -373,7 +446,7 @@ VIEWS.borrow = () => {
   app.innerHTML = `
   <div class="card"><div class="row"><button class="btn" id="scan">${scanIco}${tr('สแกน QR', 'Scan QR')}</button></div>
   <div class="row" style="margin-top:8px"><input class="t grow" id="code" placeholder="${tr('หรือพิมพ์รหัส เช่น UN-SV-GN-001-RC-001', 'or type a code, e.g. UN-SV-GN-001-RC-001')}" autocapitalize="characters"><button class="btn small ghost" id="add">${tr('เพิ่ม', 'Add')}</button></div>
-  ${S.scanOk ? '' : `<p class="hint" style="margin:8px 0 0">${tr('สแกนในตัวได้เมื่อเปิดจากแอป LINE บนมือถือ ใช้กล้องมือถือสแกน QR บนอุปกรณ์ได้เช่นกัน', 'Built-in scanning works in the LINE app on a phone. You can also scan the QR with your phone camera.')}</p>`}</div>
+</div>
   ${S.cart.length ? S.cart.map(cartGroup).join('') : `<div class="card empty">${tr('ยังไม่มีอุปกรณ์ในตะกร้า สแกน QR บนกล่องเพื่อดึงทั้งชุด หรือสแกนทีละชิ้น', 'The cart is empty. Scan the case QR for a whole set, or scan items one by one.')}</div>`}`;
   bar(`<button class="btn ghost" id="clr" ${S.cart.length ? '' : 'disabled'}>${tr('ล้าง', 'Clear')}</button><button class="btn" id="next" ${n ? '' : 'disabled'} style="flex:2">${tr('ถัดไป', 'Next')} (${n})</button>`);
   $('#scan').onclick = async () => { const v = await scanOnce(); if (v) scanned(v, 'borrow'); };
