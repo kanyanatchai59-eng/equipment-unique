@@ -3,8 +3,8 @@
  * Backend API for the LIFF app (https://liff.line.me/2012756966-P652TGXb)
  *
  * Deploy: Web app, Execute as: Me, Who has access: Anyone
- * The LIFF page POSTs JSON as text/plain (no CORS preflight): {action, idToken, ...}
- * Every request proves who the user is with the LINE ID token, checked at
+ * The LIFF page POSTs JSON as text/plain (no CORS preflight): {action, accessToken, ...}
+ * Every request proves who the user is with the LIFF access token, checked at
  * https://api.line.me/oauth2/v2.1/verify against the LINE Login channel ID.
  *
  * Script Properties
@@ -13,7 +13,7 @@
  *
  * One-time setup in the editor: run setup() then installTriggers().
  */
-var VERSION = '1.0.0';
+var VERSION = '1.0.1';
 var SHEET_ID = '1IHMkxezi10zE0iHq_TTs_w1dA-v5N5d4K_hnjEGKy3Y';
 var LIFF_ID = '2012756966-P652TGXb';
 var LOGIN_CHANNEL_ID = '2012756966';
@@ -85,7 +85,7 @@ var OPEN_ACTIONS = { me: 1, register: 1, requestReview: 1, setLang: 1 };
 var STAFF_ACTIONS = { checkOut: 1, receive: 1, overview: 1, approveUser: 1, setRole: 1, resolveIssue: 1, assetList: 1 };
 
 function route_(req) {
-  var who = auth_(req.idToken);
+  var who = auth_(req);
   var user = userBySub_(who.sub);
   var a = req.action;
   if (!OPEN_ACTIONS[a]) {
@@ -115,10 +115,38 @@ function route_(req) {
   }
 }
 
-/* ---------------- LINE ID token ---------------- */
+/* ---------------- LINE identity ----------------
+ * The LIFF app (scope: profile) sends its access token. We check it belongs to our LINE Login
+ * channel (GET /oauth2/v2.1/verify) and read the userId from /v2/profile.
+ * An ID token (scope openid) is also accepted when the page sends one.
+ * Source: developers.line.biz/en/reference/line-login/#verify-access-token and #get-user-profile */
 
-function auth_(idToken) {
-  if (!idToken) fail_('กรุณาเปิดผ่านแอป LINE', 'AUTH');
+function auth_(req) {
+  if (req.accessToken) return authAccess_(req.accessToken);
+  if (req.idToken) return authId_(req.idToken);
+  fail_('ยังไม่ได้เข้าสู่ระบบ LINE กรุณาเปิดใหม่', 'AUTH_EXPIRED');
+}
+
+function authAccess_(token) {
+  var cache = CacheService.getScriptCache();
+  var key = 'at:' + hash_(token);
+  var hit = cache.get(key);
+  if (hit) return JSON.parse(hit);
+  var v = UrlFetchApp.fetch('https://api.line.me/oauth2/v2.1/verify?access_token=' + encodeURIComponent(token), { muteHttpExceptions: true });
+  var vb = {};
+  try { vb = JSON.parse(v.getContentText()); } catch (x) { /* ignore */ }
+  if (v.getResponseCode() !== 200) fail_('การยืนยันตัวตนหมดอายุ กรุณาเปิดใหม่', 'AUTH_EXPIRED');
+  if (String(vb.client_id) !== LOGIN_CHANNEL_ID) fail_('ยืนยันตัวตนกับ LINE ไม่สำเร็จ', 'AUTH');
+  var p = UrlFetchApp.fetch('https://api.line.me/v2/profile', { headers: { Authorization: 'Bearer ' + token }, muteHttpExceptions: true });
+  var pb = {};
+  try { pb = JSON.parse(p.getContentText()); } catch (x) { /* ignore */ }
+  if (p.getResponseCode() !== 200 || !pb.userId) fail_('อ่านข้อมูลบัญชี LINE ไม่สำเร็จ กรุณาเปิดใหม่', 'AUTH_EXPIRED');
+  var who = { sub: pb.userId, name: pb.displayName || '', picture: pb.pictureUrl || '' };
+  cache.put(key, JSON.stringify(who), Math.max(30, Math.min(600, (+vb.expires_in || 0) - 30)));
+  return who;
+}
+
+function authId_(idToken) {
   var cache = CacheService.getScriptCache();
   var key = 'tk:' + hash_(idToken);
   var hit = cache.get(key);

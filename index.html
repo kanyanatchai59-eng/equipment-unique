@@ -94,7 +94,7 @@ const CFG = {
   liffId: '2012756966-P652TGXb',
   api: 'https://script.google.com/macros/s/AKfycbz93ANL2K0AULfT4SueRfPgsoqVe89BhoPKeZqixdsBppBkmdbFBK3D5Lsp2iAj35gc/exec'
 };
-const S = { lang: 'th', me: null, idToken: '', cart: [], stack: [], params: {}, scanOk: false };
+const S = { lang: 'th', me: null, idToken: '', accessToken: '', cart: [], stack: [], params: {}, scanOk: false };
 const $ = s => document.querySelector(s);
 const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const tr = (th, en) => S.lang === 'en' ? en : th;
@@ -142,7 +142,7 @@ $('#lang').onclick = async () => { S.lang = S.lang === 'en' ? 'th' : 'en'; docum
 async function api(action, payload = {}, opts = {}) {
   let res;
   try {
-    const r = await fetch(CFG.api, { method: 'POST', body: JSON.stringify(Object.assign({ action, idToken: S.idToken }, payload)) });
+    const r = await fetch(CFG.api, { method: 'POST', body: JSON.stringify(Object.assign({ action, accessToken: S.accessToken, idToken: S.idToken }, payload)) });
     res = await r.json();
   } catch (e) {
     const err = new Error(tr('เชื่อมต่อไม่สำเร็จ ตรวจสัญญาณอินเทอร์เน็ตแล้วลองใหม่', 'Connection failed. Check your internet and try again.'));
@@ -150,7 +150,7 @@ async function api(action, payload = {}, opts = {}) {
   }
   if (res.ok) return res.data;
   const err = new Error(res.error || 'Error'); err.code = res.code;
-  if (res.code === 'AUTH_EXPIRED') { location.reload(); throw err; }
+  if (res.code === 'AUTH_EXPIRED') { relogin(); throw err; }
   if (res.code === 'NOT_ACTIVE') { S.me = null; boot(); throw err; }
   if (!opts.quiet && res.code !== 'UNAVAILABLE') toast(errText(err), true);
   throw err;
@@ -185,12 +185,14 @@ async function boot() {
   }
   if (!S.lang) S.lang = /^th/i.test(liff.getLanguage() || 'th') ? 'th' : 'en';
   document.documentElement.lang = S.lang;
-  if (!liff.isLoggedIn()) { liff.login({ redirectUri: location.href }); return; }
-  S.idToken = liff.getIDToken();
+  S.accessToken = liff.isLoggedIn() ? (liff.getAccessToken() || '') : '';
+  S.idToken = liff.isLoggedIn() ? (liff.getIDToken() || '') : '';
+  if (!S.accessToken) { relogin(); return; }
   S.scanOk = liff.isInClient() && liff.isApiAvailable && liff.isApiAvailable('scanCodeV2');
   const q = new URLSearchParams(location.search);
   S.params = { v: q.get('v') || '', c: q.get('c') || '', t: q.get('t') || '' };
-  try { S.me = await api('me', {}, { quiet: true }); } catch (e) {
+  try { S.me = await api('me', {}, { quiet: true }); try { sessionStorage.removeItem('eq_relogin'); } catch (x) {} } catch (e) {
+    if (e.code === 'AUTH_EXPIRED') return;
     setTop('EQUIPMENT Unique');
     app.innerHTML = `<div class="card"><h2>${tr('เปิดระบบไม่สำเร็จ', 'Could not open')}</h2><p class="hint">${esc(errText(e))}</p><button class="btn" onclick="location.reload()">${tr('ลองใหม่', 'Try again')}</button></div>`; return;
   }
@@ -207,6 +209,20 @@ async function boot() {
   if (p.v === 'mine') return go('mine');
   if (p.v === 'admin' && isStaff()) return go('admin');
   render();
+}
+/* sign in again with LINE (token missing or expired). In the LINE app the token is renewed on open,
+   so a reload is enough; in a normal browser we log out and log in. Guarded against loops. */
+function relogin() {
+  let n = 0; try { n = +(sessionStorage.getItem('eq_relogin') || 0); } catch (e) {}
+  if (Date.now() - n < 60000) {
+    setTop('EQUIPMENT Unique');
+    app.innerHTML = `<div class="card"><h2>${tr('เข้าสู่ระบบ LINE ไม่สำเร็จ', 'LINE sign-in failed')}</h2><p class="hint">${tr('ปิดหน้านี้แล้วเปิดใหม่จากเมนูในแชท EQUIPMENT Unique', 'Close this page and open it again from the EQUIPMENT Unique chat menu')}</p><button class="btn" onclick="sessionStorage.removeItem('eq_relogin');location.reload()">${tr('ลองใหม่', 'Try again')}</button></div>`;
+    return;
+  }
+  try { sessionStorage.setItem('eq_relogin', String(Date.now())); } catch (e) {}
+  if (liff.isInClient()) { location.reload(); return; }
+  try { if (liff.isLoggedIn()) liff.logout(); } catch (e) {}
+  liff.login({ redirectUri: location.href });
 }
 const isStaff = () => S.me && S.me.user && (S.me.user.role === 'ADMIN' || S.me.user.role === 'CHECKER');
 
