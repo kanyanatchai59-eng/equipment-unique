@@ -909,11 +909,12 @@ function checkLine() {
   Logger.log('quota used this month: ' + quota.getContentText());
 }
 
-/* rich menu: 3 buttons that open the LIFF app. imageFileId = PNG 2500x843 on Google Drive */
-function setupRichMenu(imageFileId) {
-  imageFileId = imageFileId || PropertiesService.getScriptProperties().getProperty('RICHMENU_IMAGE');
+/* rich menu: 3 buttons that open the LIFF app. The PNG (2500x843) is read from the public GitHub repo,
+   so this project does not need access to Google Drive. */
+var RICHMENU_IMAGE_URL = 'https://raw.githubusercontent.com/kanyanatchai59-eng/equipment-unique/main/assets/richmenu.png';
+function setupRichMenu() {
   var token = PropertiesService.getScriptProperties().getProperty('LINE_TOKEN');
-  if (!token || !imageFileId) throw new Error('need LINE_TOKEN and RICHMENU_IMAGE');
+  if (!token) throw new Error('need LINE_TOKEN in Script Properties');
   var h = { Authorization: 'Bearer ' + token };
   var w = Math.floor(2500 / 3);
   var menu = {
@@ -927,7 +928,9 @@ function setupRichMenu(imageFileId) {
   var r1 = UrlFetchApp.fetch('https://api.line.me/v2/bot/richmenu', { method: 'post', contentType: 'application/json', headers: h, payload: JSON.stringify(menu), muteHttpExceptions: true });
   if (r1.getResponseCode() !== 200) throw new Error('create ' + r1.getContentText());
   var id = JSON.parse(r1.getContentText()).richMenuId;
-  var blob = DriveApp.getFileById(imageFileId).getBlob().setContentType('image/png');
+  var img = UrlFetchApp.fetch(RICHMENU_IMAGE_URL, { muteHttpExceptions: true });
+  if (img.getResponseCode() !== 200) throw new Error('image download ' + img.getResponseCode());
+  var blob = img.getBlob();
   var r2 = UrlFetchApp.fetch('https://api-data.line.me/v2/bot/richmenu/' + id + '/content', { method: 'post', contentType: 'image/png', headers: h, payload: blob.getBytes(), muteHttpExceptions: true });
   if (r2.getResponseCode() !== 200) throw new Error('image ' + r2.getContentText());
   var r3 = UrlFetchApp.fetch('https://api.line.me/v2/bot/user/all/richmenu/' + id, { method: 'post', headers: h, muteHttpExceptions: true });
