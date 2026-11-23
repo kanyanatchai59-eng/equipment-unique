@@ -13,7 +13,7 @@
  *
  * One-time setup in the editor: run setup() then installTriggers().
  */
-var VERSION = '1.0.1';
+var VERSION = '1.1.0';
 var SHEET_ID = '1IHMkxezi10zE0iHq_TTs_w1dA-v5N5d4K_hnjEGKy3Y';
 var LIFF_ID = '2012756966-P652TGXb';
 var LOGIN_CHANNEL_ID = '2012756966';
@@ -82,19 +82,36 @@ function fail_(msg, code) {
 /* ---------------- routing ---------------- */
 
 var OPEN_ACTIONS = { me: 1, register: 1, requestReview: 1, setLang: 1 };
-var STAFF_ACTIONS = { checkOut: 1, receive: 1, overview: 1, approveUser: 1, setRole: 1, resolveIssue: 1, assetList: 1 };
+var STAFF_ACTIONS = { checkOut: 1, receive: 1, overview: 1, approveUser: 1, resolveIssue: 1, assetList: 1,
+  adminAssets: 1, assetDetail: 1, ticketsList: 1, ticketDue: 1, dashboard: 1, usersList: 1 };
+var ADMIN_ACTIONS = { setRole: 1, assetSave: 1, userSave: 1, employeeSave: 1, settingsSave: 1 };
+
+/* who really pressed the button when an admin acts in another user's view (for the Events log) */
+var _actBy = '';
 
 function route_(req) {
   var who = auth_(req);
   var user = userBySub_(who.sub);
   var a = req.action;
+  _actBy = '';
+  // admin acting as another user: every rule below applies to that user, the log names the admin
+  if (req.asUser && a !== 'setLang') {
+    if (!user || user.status !== 'ACTIVE' || user.role !== 'ADMIN') fail_('เฉพาะผู้ดูแลระบบกดแทนผู้อื่นได้', 'FORBIDDEN');
+    var target = rows_('Users').filter(function (u) { return u.lineUserId === req.asUser; })[0];
+    if (!target) fail_('ไม่พบผู้ใช้ที่จะกดแทน', 'AS_NOT_FOUND');
+    if (target.status !== 'ACTIVE') fail_('บัญชีที่จะกดแทนยังใช้งานไม่ได้ (' + target.status + ')', 'AS_INACTIVE');
+    _actBy = user.name;
+    user = target;
+    who = { sub: target.lineUserId, name: target.lineName || target.name };
+  }
   if (!OPEN_ACTIONS[a]) {
     if (!user || user.status !== 'ACTIVE') fail_('ยังไม่ได้ลงทะเบียนหรือบัญชียังไม่ได้รับอนุมัติ', 'NOT_ACTIVE');
     if (STAFF_ACTIONS[a] && !isStaff_(user)) fail_('บัญชีนี้ไม่มีสิทธิ์ทำรายการนี้', 'FORBIDDEN');
-    touch_(user);
+    if (ADMIN_ACTIONS[a] && user.role !== 'ADMIN') fail_('เฉพาะผู้ดูแลระบบ', 'FORBIDDEN');
+    if (!_actBy) touch_(user);
   }
   switch (a) {
-    case 'me': return me_(who, user);
+    case 'me': { var m = me_(who, user); if (_actBy) m.actingAs = true; return m; }
     case 'register': return register_(who, user, req);
     case 'requestReview': return requestReview_(who, user, req);
     case 'setLang': return setLang_(who, user, req);
@@ -111,6 +128,16 @@ function route_(req) {
     case 'setRole': return setRole_(user, req);
     case 'resolveIssue': return resolveIssue_(user, req);
     case 'assetList': return assetList_(user, req);
+    case 'adminAssets': return adminAssets_(user);
+    case 'assetDetail': return assetDetail_(user, req);
+    case 'assetSave': return assetSave_(user, req);
+    case 'ticketsList': return ticketsList_(user, req);
+    case 'ticketDue': return ticketDue_(user, req);
+    case 'dashboard': return dashboard_(user, req);
+    case 'usersList': return usersList_(user);
+    case 'userSave': return userSave_(user, req);
+    case 'employeeSave': return employeeSave_(user, req);
+    case 'settingsSave': return settingsSave_(user, req);
     default: fail_('ไม่รู้จักคำสั่งนี้', 'BAD_ACTION');
   }
 }
@@ -242,6 +269,7 @@ function setting_(k) {
 }
 
 function event_(actor, action, ref, detail) {
+  if (_actBy) { actor = actor + ' (กดแทนโดย ' + _actBy + ')'; detail = detail || {}; detail.actBy = _actBy; }
   append_('Events', [{ at: now_(), actor: actor, action: action, ref: ref || '', detail: detail ? JSON.stringify(detail).slice(0, 2000) : '' }]);
 }
 
@@ -760,6 +788,303 @@ function resolveIssue_(staff, req) {
     }
     event_(staff.name, 'ISSUE_CLOSE', i.issueId, { available: !!req.available });
     return overview_(staff);
+  });
+}
+
+/* ---------------- admin back office ---------------- */
+
+var ASSET_STATUSES = ['AVAILABLE', 'REPAIR', 'LOST', 'MISSING', 'CHECK', 'RETIRED'];
+var ASSET_FIELDS = ['kit', 'category', 'type', 'name', 'brand', 'model', 'serial', 'office', 'status', 'calLast', 'calDue', 'note'];
+
+function adminAssets_(staff) {
+  var assets = rows_('Assets').map(function (a) {
+    return {
+      code: a.code, kit: a.kit, category: a.category, type: a.type, name: a.name, brand: a.brand, model: a.model,
+      serial: a.serial, office: a.office, status: a.status, ticketId: a.ticketId, holderName: a.holderName,
+      since: a.since, calLast: a.calLast, calDue: a.calDue, cal: calState_(a), note: a.note
+    };
+  });
+  var kits = rows_('Kits').map(function (k) { return { kit: k.kit, name: k.name, category: k.category, main: k.main }; });
+  return { assets: assets, kits: kits, statuses: ASSET_STATUSES, canEdit: staff.role === 'ADMIN' };
+}
+
+function assetDetail_(staff, req) {
+  var code = String(req.code || '').toUpperCase();
+  var a = assetMap_()[code];
+  if (!a) fail_('ไม่พบอุปกรณ์ ' + code, 'NOT_FOUND');
+  var tick = {};
+  rows_('Tickets').forEach(function (x) { tick[x.ticketId] = x; });
+  var hist = rows_('TicketItems').filter(function (x) { return String(x.code).toUpperCase() === code; }).map(function (x) {
+    var tk = tick[x.ticketId] || {};
+    return { ticketId: x.ticketId, name: tk.name || '', empId: tk.empId || '', outAt: x.outAt, dueAt: tk.dueAt || '', returnedAt: x.returnedAt, cond: x.cond, note: x.note, site: tk.site || '' };
+  });
+  hist.sort(function (p, q) { return p.outAt < q.outAt ? 1 : -1; });
+  var issues = rows_('Issues').filter(function (i) { return String(i.code).toUpperCase() === code; }).map(function (i) {
+    return { issueId: i.issueId, at: i.at, type: i.type, note: i.note, status: i.status, reporter: i.reporter, ticketId: i.ticketId };
+  });
+  var out = pubAsset_(a, null);
+  out.office = a.office; out.calLast = a.calLast; out.updatedAt = a.updatedAt;
+  var k = a.kit ? rows_('Kits').filter(function (x) { return x.kit === a.kit; })[0] : null;
+  out.kitName = k ? k.name : '';
+  out.kitItems = a.kit ? rows_('Assets').filter(function (x) { return x.kit === a.kit; }).map(function (x) { return { code: x.code, name: x.name, status: x.status }; }) : [];
+  return { asset: out, history: hist.slice(0, 40), loans: hist.length, issues: issues, canEdit: staff.role === 'ADMIN' };
+}
+
+function isDate_(s) { return s === '' || /^\d{4}-\d{2}-\d{2}$/.test(s); }
+
+function assetSave_(admin, req) {
+  var code = String(req.code || '').trim().toUpperCase();
+  var f = req.fields || {};
+  if (!code) fail_('กรุณากรอกรหัสอุปกรณ์', 'INPUT');
+  if (!/^[A-Z0-9][A-Z0-9\/\-.]{2,40}$/.test(code)) fail_('รหัสอุปกรณ์ใช้ได้เฉพาะ A-Z 0-9 - / .', 'INPUT');
+  return withLock_(function () {
+    var a = assetMap_()[code], at = now_(), changes = {};
+    var clean = {};
+    ASSET_FIELDS.forEach(function (k) {
+      if (f[k] === undefined) return;
+      var v = String(f[k] == null ? '' : f[k]).trim().slice(0, 300);
+      if (k === 'kit' || k === 'type') v = v.toUpperCase();
+      clean[k] = v;
+    });
+    if (clean.status !== undefined && ASSET_STATUSES.indexOf(clean.status) < 0) fail_('สถานะไม่ถูกต้อง', 'INPUT');
+    if (clean.calLast !== undefined && !isDate_(clean.calLast)) fail_('วันที่สอบเทียบล่าสุดต้องเป็น ปปปป-ดด-วว', 'INPUT');
+    if (clean.calDue !== undefined && !isDate_(clean.calDue)) fail_('วันครบกำหนดสอบเทียบต้องเป็น ปปปป-ดด-วว', 'INPUT');
+    if (req.isNew) {
+      if (a) fail_('มีรหัส ' + code + ' อยู่แล้ว', 'DUP');
+      var m = code.match(CODE_RE);
+      var row = { code: code, kit: '', category: '', type: m ? m[3] : '', name: '', brand: '', model: '', serial: '', office: '',
+        status: 'AVAILABLE', ticketId: '', holder: '', holderName: '', since: '', calLast: '', calDue: '', note: '', updatedAt: at };
+      if (m && m[2] !== '000') row.kit = code.split('-').slice(0, 4).join('-');
+      if (m) row.category = { GN: 'GNSS', DR: 'Drone', DL: 'Digital Level', OF: 'Office' }[m[1]];
+      Object.keys(clean).forEach(function (k) { if (clean[k] !== '' || k === 'note') row[k] = clean[k]; });
+      if (!row.name) fail_('กรุณากรอกชื่ออุปกรณ์', 'INPUT');
+      append_('Assets', [row]);
+      if (row.kit && !rows_('Kits').filter(function (k) { return k.kit === row.kit; }).length) {
+        append_('Kits', [{ kit: row.kit, name: row.category + ' set ' + row.kit.split('-')[3] + (row.model ? ' · ' + row.brand + ' ' + row.model : ''), category: row.category, main: code, items: 1, office: row.office }]);
+      }
+      event_(admin.name, 'ASSET_ADD', code, { name: row.name, kit: row.kit });
+    } else {
+      if (!a) fail_('ไม่พบอุปกรณ์ ' + code, 'NOT_FOUND');
+      if (a.status === 'ON_LOAN' && clean.status !== undefined && clean.status !== 'ON_LOAN') fail_('อุปกรณ์นี้ถูกเบิกอยู่ (' + a.ticketId + ') ต้องคืนผ่านใบเบิกก่อนจึงเปลี่ยนสถานะได้', 'ON_LOAN');
+      if (a.status === 'ON_LOAN') delete clean.status;
+      Object.keys(clean).forEach(function (k) { if (String(a[k] || '') !== clean[k]) changes[k] = [a[k] || '', clean[k]]; });
+      if (!Object.keys(changes).length) return assetDetail_(admin, { code: code });
+      var upd = {};
+      Object.keys(changes).forEach(function (k) { upd[k] = clean[k]; });
+      upd.updatedAt = at;
+      update_('Assets', a, upd);
+      event_(admin.name, changes.status ? 'ASSET_STATUS' : 'ASSET_EDIT', code, changes);
+    }
+    return assetDetail_(admin, { code: code });
+  });
+}
+
+function ticketsList_(staff, req) {
+  var st = String(req.status || 'all'), q = String(req.q || '').trim().toUpperCase();
+  var from = String(req.from || ''), to = String(req.to || '');
+  var byCode = {};
+  if (q) rows_('TicketItems').forEach(function (x) { if (String(x.code).toUpperCase().indexOf(q) >= 0) byCode[x.ticketId] = 1; });
+  var list = rows_('Tickets').filter(function (t) {
+    var open = t.status === 'OPEN' || t.status === 'PARTIAL';
+    if (st === 'open' && !open) return false;
+    if (st === 'overdue' && !(open && isOverdue_(t))) return false;
+    if (st === 'closed' && t.status !== 'CLOSED') return false;
+    if (from && t.createdAt.slice(0, 10) < from) return false;
+    if (to && t.createdAt.slice(0, 10) > to) return false;
+    if (q && !byCode[t.ticketId] && [t.ticketId, t.name, t.empId, t.site, t.purpose].join(' ').toUpperCase().indexOf(q) < 0) return false;
+    return true;
+  });
+  list.sort(function (a, b) { return a.createdAt < b.createdAt ? 1 : -1; });
+  return {
+    total: list.length,
+    tickets: list.slice(0, 300).map(function (t) { var c = ticketCard_(t); c.empId = t.empId; c.outBy = t.outBy; c.closedAt = t.closedAt; return c; })
+  };
+}
+
+function ticketDue_(staff, req) {
+  var due = parseTime_(req.dueAt);
+  if (!due) fail_('วันเวลาคืนไม่ถูกต้อง', 'INPUT');
+  if (due.getTime() < Date.now() - 5 * 60000) fail_('วันเวลาคืนต้องไม่อยู่ในอดีต', 'INPUT');
+  return withLock_(function () {
+    var t = rows_('Tickets').filter(function (x) { return x.ticketId === req.ticketId; })[0];
+    if (!t) fail_('ไม่พบใบเบิก', 'NOT_FOUND');
+    if (t.status === 'CLOSED') fail_('ใบเบิกนี้คืนครบแล้ว', 'CLOSED');
+    var old = t.dueAt;
+    update_('Tickets', t, { dueAt: fmt_(due), remindedAt: '', overdueAt: '' });
+    event_(staff.name, 'TICKET_DUE', t.ticketId, { from: old, to: fmt_(due) });
+    return ticketView_(staff, t.ticketId);
+  });
+}
+
+function dashboard_(staff, req) {
+  var days = Math.max(1, Math.min(365, +req.days || 30));
+  var now = Date.now(), since = now - days * 86400000;
+  var sinceS = fmt_(new Date(since)).slice(0, 10);
+  var inP = function (s) { return s && String(s).slice(0, 10) >= sinceS; };
+  var tickets = rows_('Tickets'), items = rows_('TicketItems'), assets = rows_('Assets');
+  var tP = tickets.filter(function (t) { return inP(t.createdAt); });
+  var iP = items.filter(function (x) { return inP(x.outAt); });
+  var rP = items.filter(function (x) { return inP(x.returnedAt); });
+  var issuesP = rows_('Issues').filter(function (i) { return inP(i.at); });
+  var closedP = tickets.filter(function (t) { return t.status === 'CLOSED' && inP(t.closedAt); });
+  var onTime = closedP.filter(function (t) { return t.closedAt <= t.dueAt; }).length;
+  var hours = closedP.map(function (t) { return (parseTime_(t.closedAt) - parseTime_(t.createdAt)) / 3600000; }).filter(function (h) { return h >= 0; });
+  var byDay = {};
+  for (var d = 0; d < days; d++) byDay[fmt_(new Date(now - (days - 1 - d) * 86400000)).slice(0, 10)] = { tickets: 0, items: 0 };
+  tP.forEach(function (t) { var k = t.createdAt.slice(0, 10); if (byDay[k]) byDay[k].tickets++; });
+  iP.forEach(function (x) { var k = x.outAt.slice(0, 10); if (byDay[k]) byDay[k].items++; });
+  var amap = assetMap_(), kitName = {};
+  rows_('Kits').forEach(function (k) { kitName[k.kit] = k.name; });
+  var topI = {}, topU = {}, used = {};
+  iP.forEach(function (x) {
+    used[String(x.code).toUpperCase()] = 1;
+    var key = x.kit || x.code;
+    if (!topI[key]) { var a = amap[String(x.code).toUpperCase()] || {}; topI[key] = { key: key, name: x.kit ? (kitName[x.kit] || x.kit) : (x.name + (a.model ? ' · ' + a.model : '')), loans: {} }; }
+    topI[key].loans[x.ticketId] = 1;
+  });
+  tP.forEach(function (t) { var k = t.empId + '|' + t.name; topU[k] = (topU[k] || 0) + 1; });
+  var counts = {};
+  assets.forEach(function (a) { counts[a.status] = (counts[a.status] || 0) + 1; });
+  var open = tickets.filter(function (t) { return t.status === 'OPEN' || t.status === 'PARTIAL'; });
+  var borrowable = assets.filter(function (a) { return a.status === 'AVAILABLE' || a.status === 'ON_LOAN'; }).length;
+  return {
+    days: days, since: sinceS,
+    kpi: {
+      tickets: tP.length, items: iP.length, returned: rP.length, open: open.length,
+      overdue: open.filter(isOverdue_).length,
+      damaged: issuesP.filter(function (i) { return i.type === 'DAMAGED'; }).length,
+      lost: issuesP.filter(function (i) { return i.type === 'LOST'; }).length,
+      onTimePct: closedP.length ? Math.round(onTime * 100 / closedP.length) : null,
+      avgHours: hours.length ? Math.round(hours.reduce(function (s, h) { return s + h; }, 0) / hours.length * 10) / 10 : null,
+      usedPct: borrowable ? Math.round(Object.keys(used).length * 100 / borrowable) : 0,
+      usedItems: Object.keys(used).length, borrowable: borrowable,
+      users: rows_('Users').filter(function (u) { return u.status === 'ACTIVE'; }).length
+    },
+    counts: counts, total: assets.length,
+    byDay: Object.keys(byDay).map(function (k) { return { day: k, tickets: byDay[k].tickets, items: byDay[k].items }; }),
+    topItems: Object.keys(topI).map(function (k) { return { key: k, name: topI[k].name, loans: Object.keys(topI[k].loans).length }; })
+      .sort(function (a, b) { return b.loans - a.loans; }).slice(0, 10),
+    topUsers: Object.keys(topU).map(function (k) { var p = k.split('|'); return { empId: p[0], name: p[1], tickets: topU[k] }; })
+      .sort(function (a, b) { return b.tickets - a.tickets; }).slice(0, 10),
+    overdue: open.filter(isOverdue_).map(ticketCard_)
+  };
+}
+
+function maskPhone_(p) { p = normPhone_(p); return p ? p.slice(0, 3) + '-•••-' + p.slice(-3) : ''; }
+
+function usersList_(staff) {
+  var isAdmin = staff.role === 'ADMIN';
+  var emps = rows_('Employees');
+  var users = rows_('Users').map(function (u) {
+    var e = employee_(u.empId);
+    return { lineUserId: u.lineUserId, empId: u.empId, name: u.name, lineName: u.lineName, role: u.role, status: u.status,
+      lang: u.lang, createdAt: u.createdAt, approvedBy: u.approvedBy, lastSeen: u.lastSeen, position: e ? e.position : '',
+      nameEn: e ? e.nameEn : '', inRegister: !!e, phoneEntered: isAdmin ? u.phoneEntered : maskPhone_(u.phoneEntered) };
+  });
+  var reg = {};
+  rows_('Users').forEach(function (u) { if (u.status === 'ACTIVE') reg[normEmp_(u.empId)] = u.lineUserId; });
+  var employees = emps.map(function (e) {
+    return { empId: e.empId, name: e.name, nameEn: e.nameEn, nickname: e.nickname, nicknameEn: e.nicknameEn, position: e.position,
+      email: e.email, phone: isAdmin ? e.phone : maskPhone_(e.phone), team: e.team, active: String(e.active).toUpperCase() !== 'FALSE',
+      registered: !!reg[normEmp_(e.empId)] };
+  });
+  var settings = {};
+  Object.keys(DEFAULTS).forEach(function (k) { settings[k] = setting_(k); });
+  return { users: users, employees: employees, settings: settings, me: staff.lineUserId, isAdmin: isAdmin };
+}
+
+function userSave_(admin, req) {
+  return withLock_(function () {
+    var u = rows_('Users').filter(function (x) { return x.lineUserId === req.lineUserId; })[0];
+    if (!u) fail_('ไม่พบผู้ใช้', 'NOT_FOUND');
+    var upd = {};
+    if (req.role !== undefined) {
+      if (!{ USER: 1, CHECKER: 1, ADMIN: 1 }[req.role]) fail_('สิทธิ์ไม่ถูกต้อง', 'INPUT');
+      if (u.lineUserId === admin.lineUserId && req.role !== 'ADMIN') fail_('เปลี่ยนสิทธิ์ของตัวเองไม่ได้', 'INPUT');
+      upd.role = req.role;
+    }
+    if (req.status !== undefined) {
+      if (!{ ACTIVE: 1, DISABLED: 1 }[req.status]) fail_('สถานะไม่ถูกต้อง', 'INPUT');
+      if (u.lineUserId === admin.lineUserId) fail_('ปิดบัญชีของตัวเองไม่ได้', 'INPUT');
+      if (req.status === 'ACTIVE') {
+        var dup = rows_('Users').filter(function (x) { return x !== u && x.status === 'ACTIVE' && normEmp_(x.empId) === normEmp_(u.empId); })[0];
+        if (dup) fail_('รหัสพนักงานนี้มีบัญชีที่ใช้งานอยู่แล้ว (' + dup.name + ')', 'EMP_TAKEN');
+        upd.approvedBy = admin.name; upd.approvedAt = now_();
+      }
+      upd.status = req.status;
+    }
+    if (!Object.keys(upd).length) fail_('ไม่มีอะไรเปลี่ยน', 'INPUT');
+    var before = { role: u.role, status: u.status };
+    update_('Users', u, upd);
+    event_(admin.name, 'USER_SAVE', u.empId, { user: u.name, before: before, after: { role: u.role, status: u.status } });
+    if (upd.status === 'ACTIVE' && before.status !== 'ACTIVE') {
+      push_(u.lineUserId, card_(u.lang, 'green', t_(u.lang, 'บัญชีพร้อมใช้งานแล้ว', 'Your account is ready'),
+        [t_(u.lang, 'ผู้ดูแลเปิดใช้บัญชีของคุณแล้ว', 'An admin activated your account.')], t_(u.lang, 'เปิดระบบ', 'Open'), liffUrl_('')));
+    }
+    return usersList_(admin);
+  });
+}
+
+function employeeSave_(admin, req) {
+  var f = req.fields || {};
+  var empId = String(req.empId || '').trim();
+  if (!/^[A-Za-z0-9]{3,20}$/.test(empId)) fail_('รหัสพนักงานใช้ได้เฉพาะตัวเลข/ตัวอักษร 3-20 ตัว', 'INPUT');
+  var phone = f.phone !== undefined ? normPhone_(f.phone) : undefined;
+  if (phone !== undefined && phone !== '' && !/^0\d{8,9}$/.test(phone)) fail_('เบอร์โทรต้องเป็น 9-10 หลัก ขึ้นต้นด้วย 0', 'INPUT');
+  return withLock_(function () {
+    var e = rows_('Employees').filter(function (x) { return normEmp_(x.empId) === normEmp_(empId) && x.empId.toUpperCase() === empId.toUpperCase(); })[0]
+      || rows_('Employees').filter(function (x) { return normEmp_(x.empId) && normEmp_(x.empId) === normEmp_(empId); })[0];
+    var keys = ['name', 'nameEn', 'nickname', 'nicknameEn', 'position', 'email', 'team'];
+    var clean = {};
+    keys.forEach(function (k) { if (f[k] !== undefined) clean[k] = String(f[k] || '').trim().slice(0, 120); });
+    if (phone !== undefined) clean.phone = phone;
+    if (f.active !== undefined) clean.active = f.active ? 'TRUE' : 'FALSE';
+    if (req.isNew) {
+      if (e) fail_('มีรหัสพนักงาน ' + empId + ' อยู่แล้ว', 'DUP');
+      if (!clean.name && !clean.nameEn) fail_('กรุณากรอกชื่อ', 'INPUT');
+      var row = { empId: empId, name: '', nameEn: '', nickname: '', nicknameEn: '', position: '', email: '', phone: '', team: 'Survey BPNP (MD)', active: 'TRUE', source: 'เพิ่มโดยผู้ดูแล ' + now_().slice(0, 10) };
+      Object.keys(clean).forEach(function (k) { row[k] = clean[k]; });
+      append_('Employees', [row]);
+      event_(admin.name, 'EMP_ADD', empId, { name: row.name || row.nameEn });
+    } else {
+      if (!e) fail_('ไม่พบรหัสพนักงาน ' + empId, 'NOT_FOUND');
+      var changed = {};
+      Object.keys(clean).forEach(function (k) { if (String(e[k] || '') !== clean[k]) changed[k] = k === 'phone' ? 'changed' : clean[k]; });
+      if (Object.keys(changed).length) {
+        update_('Employees', e, clean);
+        event_(admin.name, 'EMP_EDIT', e.empId, changed);
+      }
+    }
+    return usersList_(admin);
+  });
+}
+
+function settingsSave_(admin, req) {
+  var v = req.values || {};
+  var rules = {
+    RETURN_TIME: function (x) { return /^([01]\d|2[0-3]):[0-5]\d$/.test(x); },
+    CAL_WARN_DAYS: function (x) { return /^\d{1,3}$/.test(x); },
+    CAL_BLOCK: function (x) { return x === 'TRUE' || x === 'FALSE'; },
+    REMIND_BEFORE_MIN: function (x) { return /^\d{1,4}$/.test(x); },
+    OVERDUE_DAILY_HOUR: function (x) { return /^\d{1,2}$/.test(x) && +x <= 23; },
+    NOTIFY_ADMINS_OVERDUE: function (x) { return x === 'TRUE' || x === 'FALSE'; }
+  };
+  var clean = {};
+  Object.keys(v).forEach(function (k) {
+    if (!rules[k]) return;
+    var x = String(v[k]).trim().toUpperCase();
+    if (!rules[k](x)) fail_('ค่าของ ' + k + ' ไม่ถูกต้อง', 'INPUT');
+    clean[k] = x;
+  });
+  return withLock_(function () {
+    var changed = {};
+    Object.keys(clean).forEach(function (k) {
+      var r = rows_('Settings').filter(function (x) { return x.key === k; })[0];
+      if (r) { if (r.value !== clean[k]) { changed[k] = [r.value, clean[k]]; update_('Settings', r, { value: clean[k] }); } }
+      else { changed[k] = ['', clean[k]]; append_('Settings', [{ key: k, value: clean[k], note: '' }]); }
+    });
+    if (Object.keys(changed).length) event_(admin.name, 'SETTINGS', '', changed);
+    return usersList_(admin);
   });
 }
 
