@@ -10,10 +10,15 @@
  * Script Properties
  *   LINE_TOKEN   Messaging API channel access token (EQUIPMENT Unique @076uejbw) - secret
  *   RICHMENU_ID  set by setupRichMenu()
+ *   SHEET_ID     optional: use another spreadsheet (the test copy) instead of the live database
+ *
+ * v1.2 merges the Survey Inventory register (HO level): every asset has a location (HO, a project
+ * code or a shop) on top of its status, HO staff move instruments between HO, projects and shops,
+ * and the daily QR borrowing only offers what is at the borrower's own project.
  *
  * One-time setup in the editor: run setup() then installTriggers().
  */
-var VERSION = '1.1.0';
+var VERSION = '1.2.0';
 var SHEET_ID = '1IHMkxezi10zE0iHq_TTs_w1dA-v5N5d4K_hnjEGKy3Y';
 var LIFF_ID = '2012756966-P652TGXb';
 var LOGIN_CHANNEL_ID = '2012756966';
@@ -21,7 +26,8 @@ var TZ = 'Asia/Bangkok';
 
 var SCHEMA = {
   Assets: ['code', 'kit', 'category', 'type', 'name', 'brand', 'model', 'serial', 'office', 'status', 'ticketId',
-    'holder', 'holderName', 'since', 'calLast', 'calDue', 'note', 'updatedAt'],
+    'holder', 'holderName', 'since', 'calLast', 'calDue', 'note', 'updatedAt',
+    'location', 'reservedFor', 'custodian', 'calType', 'calCert', 'po', 'owner', 'warrantyStart', 'warrantyEnd', 'confirmed'],
   Kits: ['kit', 'name', 'category', 'main', 'items', 'office'],
   Tickets: ['ticketId', 'empId', 'name', 'lineUserId', 'purpose', 'site', 'createdAt', 'dueAt', 'status', 'items',
     'returned', 'outBy', 'outAt', 'closedAt', 'remindedAt', 'overdueAt', 'note'],
@@ -31,14 +37,19 @@ var SCHEMA = {
     'resolvedAt', 'resolvedBy'],
   Users: ['lineUserId', 'empId', 'name', 'lineName', 'role', 'status', 'lang', 'phoneEntered', 'createdAt',
     'approvedBy', 'approvedAt', 'lastSeen'],
-  Employees: ['empId', 'name', 'nameEn', 'nickname', 'nicknameEn', 'position', 'email', 'phone', 'team', 'active', 'source'],
+  Employees: ['empId', 'name', 'nameEn', 'nickname', 'nicknameEn', 'position', 'email', 'phone', 'team', 'active', 'source', 'project'],
   Events: ['at', 'actor', 'action', 'ref', 'detail'],
-  Settings: ['key', 'value', 'note']
+  Settings: ['key', 'value', 'note'],
+  Projects: ['code', 'name', 'closedAt', 'note', 'createdAt'],
+  CalRules: ['type', 'months', 'lead', 'note']
 };
+/* tables a database made before v1.2 may not have yet: read as empty until setup() adds them */
+var OPTIONAL_TABLES = { Projects: 1, CalRules: 1 };
 
 var DEFAULTS = {
   RETURN_TIME: '17:30', CAL_WARN_DAYS: '30', CAL_BLOCK: 'FALSE', REMIND_BEFORE_MIN: '60',
-  OVERDUE_DAILY_HOUR: '8', NOTIFY_ADMINS_OVERDUE: 'TRUE'
+  OVERDUE_DAILY_HOUR: '8', NOTIFY_ADMINS_OVERDUE: 'TRUE',
+  HOME_PROJECT: 'BPNP', HO_CAL_BLOCK: 'TRUE'
 };
 
 var CODE_RE = /^UN-SV-(GN|DR|DL|OF)-(\d{3})-([A-Z]{2})-(\d{3})(-DUP\d)?$/;
@@ -81,10 +92,15 @@ function fail_(msg, code) {
 
 /* ---------------- routing ---------------- */
 
+/* roles: USER borrows; VIEWER also reads the back office; CHECKER also confirms hand-over/returns and approves
+   sign-ups; STORE also moves instruments between HO, projects and shops and edits the register; ADMIN everything */
+var ROLES = ['USER', 'VIEWER', 'CHECKER', 'STORE', 'ADMIN'];
 var OPEN_ACTIONS = { me: 1, register: 1, requestReview: 1, setLang: 1 };
-var STAFF_ACTIONS = { checkOut: 1, receive: 1, overview: 1, approveUser: 1, resolveIssue: 1, assetList: 1,
-  adminAssets: 1, assetDetail: 1, ticketsList: 1, ticketDue: 1, dashboard: 1, usersList: 1 };
-var ADMIN_ACTIONS = { setRole: 1, assetSave: 1, userSave: 1, employeeSave: 1, settingsSave: 1 };
+var READ_ACTIONS = { overview: 1, assetList: 1, adminAssets: 1, assetDetail: 1, ticketsList: 1, dashboard: 1, usersList: 1,
+  projectsList: 1, calList: 1 };
+var STAFF_ACTIONS = { checkOut: 1, receive: 1, approveUser: 1, resolveIssue: 1, ticketDue: 1 };
+var STORE_ACTIONS = { assetSave: 1, move: 1, projectSave: 1, projectStatus: 1, calRuleSave: 1 };
+var ADMIN_ACTIONS = { setRole: 1, userSave: 1, employeeSave: 1, settingsSave: 1 };
 
 /* who really pressed the button when an admin acts in another user's view (for the Events log) */
 var _actBy = '';
@@ -94,6 +110,7 @@ function route_(req) {
   var user = userBySub_(who.sub);
   var a = req.action;
   _actBy = '';
+  _memo = {};
   // admin acting as another user: every rule below applies to that user, the log names the admin
   if (req.asUser && a !== 'setLang') {
     if (!user || user.status !== 'ACTIVE' || user.role !== 'ADMIN') fail_('เฉพาะผู้ดูแลระบบกดแทนผู้อื่นได้', 'FORBIDDEN');
@@ -106,7 +123,9 @@ function route_(req) {
   }
   if (!OPEN_ACTIONS[a]) {
     if (!user || user.status !== 'ACTIVE') fail_('ยังไม่ได้ลงทะเบียนหรือบัญชียังไม่ได้รับอนุมัติ', 'NOT_ACTIVE');
+    if (READ_ACTIONS[a] && !canRead_(user)) fail_('บัญชีนี้ไม่มีสิทธิ์ดูหลังบ้าน', 'FORBIDDEN');
     if (STAFF_ACTIONS[a] && !isStaff_(user)) fail_('บัญชีนี้ไม่มีสิทธิ์ทำรายการนี้', 'FORBIDDEN');
+    if (STORE_ACTIONS[a] && !canStore_(user)) fail_('เฉพาะผู้ดูแลคลังหรือผู้ดูแลระบบ', 'FORBIDDEN');
     if (ADMIN_ACTIONS[a] && user.role !== 'ADMIN') fail_('เฉพาะผู้ดูแลระบบ', 'FORBIDDEN');
     if (!_actBy) touch_(user);
   }
@@ -138,6 +157,12 @@ function route_(req) {
     case 'userSave': return userSave_(user, req);
     case 'employeeSave': return employeeSave_(user, req);
     case 'settingsSave': return settingsSave_(user, req);
+    case 'move': return move_(user, req);
+    case 'projectsList': return projectsList_(user);
+    case 'projectSave': return projectSave_(user, req);
+    case 'projectStatus': return projectStatus_(user, req);
+    case 'calList': return calList_(user, req);
+    case 'calRuleSave': return calRuleSave_(user, req);
     default: fail_('ไม่รู้จักคำสั่งนี้', 'BAD_ACTION');
   }
 }
@@ -200,16 +225,21 @@ function hash_(s) {
 
 /* ---------------- sheet helpers ---------------- */
 
-var _ss = null, _tables = {};
+var _ss = null, _tables = {}, _memo = {};
+
+function sheetId_() {
+  return PropertiesService.getScriptProperties().getProperty('SHEET_ID') || SHEET_ID;
+}
 
 function ss_() {
-  if (!_ss) _ss = SpreadsheetApp.openById(SHEET_ID);
+  if (!_ss) _ss = SpreadsheetApp.openById(sheetId_());
   return _ss;
 }
 
 function table_(name) {
   if (_tables[name]) return _tables[name];
   var sh = ss_().getSheetByName(name);
+  if (!sh && OPTIONAL_TABLES[name]) return (_tables[name] = { sh: null, head: SCHEMA[name].slice(), rows: [] });
   if (!sh) fail_('ไม่พบแท็บ ' + name + ' ในชีตฐานข้อมูล', 'SETUP');
   var vals = sh.getDataRange().getDisplayValues();
   var head = vals[0].map(function (h) { return String(h).trim(); });
@@ -226,11 +256,13 @@ function table_(name) {
 
 function rows_(name) { return table_(name).rows; }
 
-function fresh_() { _tables = {}; }
+function fresh_() { _tables = {}; _memo = {}; }
 
 /* one write per row: the span between the first and last changed column, other cells keep their values */
 function update_(name, row, fields) {
   var t = table_(name), lo = 1e9, hi = -1;
+  var missing = Object.keys(fields).filter(function (k) { return t.head.indexOf(k) < 0 && SCHEMA[name] && SCHEMA[name].indexOf(k) >= 0 && fields[k] !== '' && fields[k] != null; });
+  if (missing.length) fail_('แท็บ ' + name + ' ยังไม่มีคอลัมน์ ' + missing.join(', ') + ' ให้ผู้ดูแลรัน setup() ก่อน', 'SETUP');
   Object.keys(fields).forEach(function (k) {
     var c = t.head.indexOf(k);
     if (c < 0) return;
@@ -253,6 +285,7 @@ function updateMany_(name, list) {
 function append_(name, objs) {
   if (!objs.length) return;
   var t = table_(name);
+  if (!t.sh) fail_('ยังไม่มีแท็บ ' + name + ' ในชีตฐานข้อมูล ให้ผู้ดูแลรัน setup() ก่อน', 'SETUP');
   var data = objs.map(function (o) {
     return t.head.map(function (h) { return o[h] == null ? '' : String(o[h]); });
   });
@@ -318,7 +351,9 @@ function employee_(empId) {
   })[0] || null;
 }
 
-function isStaff_(u) { return !!u && (u.role === 'ADMIN' || u.role === 'CHECKER'); }
+function isStaff_(u) { return !!u && (u.role === 'ADMIN' || u.role === 'STORE' || u.role === 'CHECKER'); }
+function canRead_(u) { return !!u && (isStaff_(u) || u.role === 'VIEWER'); }
+function canStore_(u) { return !!u && (u.role === 'ADMIN' || u.role === 'STORE'); }
 
 function admins_() {
   return rows_('Users').filter(function (u) { return u.status === 'ACTIVE' && u.role === 'ADMIN'; });
@@ -347,11 +382,13 @@ function me_(who, user) {
   if (!user) { out.registered = false; return out; }
   out.registered = true;
   out.user = pubUser_(user, employee_(user.empId));
+  out.user.project = userProject_(user);
+  out.caps = { read: canRead_(user), staff: isStaff_(user), store: canStore_(user), admin: user.role === 'ADMIN' };
   if (user.status === 'ACTIVE') {
     touch_(user);
     var mine = rows_('Tickets').filter(function (t) { return t.lineUserId === user.lineUserId && (t.status === 'OPEN' || t.status === 'PARTIAL'); });
     out.openTickets = mine.map(ticketCard_);
-    if (isStaff_(user)) {
+    if (canRead_(user)) {
       out.pendingUsers = rows_('Users').filter(function (u) { return u.status === 'PENDING'; }).length;
       out.overdue = rows_('Tickets').filter(function (t) { return (t.status === 'OPEN' || t.status === 'PARTIAL') && isOverdue_(t); }).length;
       out.openIssues = rows_('Issues').filter(function (i) { return i.status === 'OPEN'; }).length;
@@ -447,7 +484,7 @@ function approveUser_(staff, req) {
 
 function setRole_(staff, req) {
   if (staff.role !== 'ADMIN') fail_('เฉพาะผู้ดูแลระบบ', 'FORBIDDEN');
-  var role = { USER: 1, CHECKER: 1, ADMIN: 1 }[req.role] ? req.role : null;
+  var role = ROLES.indexOf(req.role) >= 0 ? req.role : null;
   if (!role) fail_('สิทธิ์ไม่ถูกต้อง', 'INPUT');
   return withLock_(function () {
     var u = rows_('Users').filter(function (x) { return x.lineUserId === req.lineUserId; })[0];
@@ -475,23 +512,89 @@ function assetMap_() {
   return m;
 }
 
-function calState_(a) {
-  if (!a.calDue) return '';
-  var due = new Date(a.calDue + 'T00:00:00+07:00');
-  var days = Math.floor((due - new Date()) / 86400000);
-  if (days < 0) return 'OVERDUE';
-  if (days <= +setting_('CAL_WARN_DAYS')) return 'SOON';
-  return 'OK';
+/* ---- calibration: rule per instrument type (months, recall lead days), the certificate's due date wins ----
+ * Same logic as Survey Inventory: due = calDue, else calLast + months (calendar months, clamped to month end);
+ * recall = due - lead days; OVERDUE from the day after due, SOON from the recall day, MISSING when a rule
+ * applies but there is no date, NONE when the type has no cycle, INACTIVE once disposal starts.
+ * Assets without calType keep the v1.1 behaviour (calDue with CAL_WARN_DAYS). */
+function today_() { return now_().slice(0, 10); }
+
+function ymd_(y, m, d) { return y + '-' + ('0' + m).slice(-2) + '-' + ('0' + d).slice(-2); }
+
+function addMonths_(s, n) {
+  var p = String(s).split('-').map(Number), m = p[1] - 1 + n, y = p[0] + Math.floor(m / 12);
+  m = ((m % 12) + 12) % 12;
+  var last = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+  return ymd_(y, m + 1, Math.min(p[2], last));
+}
+
+function addDays_(s, n) {
+  var p = String(s).split('-').map(Number), x = new Date(Date.UTC(p[0], p[1] - 1, p[2] + n));
+  return ymd_(x.getUTCFullYear(), x.getUTCMonth() + 1, x.getUTCDate());
+}
+
+function rulesMap_() {
+  if (_memo.rules) return _memo.rules;
+  var m = {};
+  rows_('CalRules').forEach(function (r) { if (r.type) m[String(r.type).trim().toUpperCase()] = { type: r.type, months: +r.months || 0, lead: +r.lead || 0 }; });
+  return (_memo.rules = m);
+}
+
+function calInfo_(a) {
+  if (a.status === 'DISPOSAL_PENDING' || a.status === 'RETIRED') return { state: a.calType || a.calDue ? 'INACTIVE' : '', due: a.calDue || '', recall: '' };
+  var due, lead;
+  if (a.calType) {
+    var r = rulesMap_()[String(a.calType).trim().toUpperCase()];
+    if (!r || !r.months) return { state: 'NONE', due: a.calDue || '', recall: '' };
+    due = isYmd_(a.calDue) ? a.calDue : (isYmd_(a.calLast) ? addMonths_(a.calLast, r.months) : '');
+    if (!due) return { state: 'MISSING', due: '', recall: '' };
+    lead = r.lead;
+  } else {
+    if (!isYmd_(a.calDue)) return { state: '', due: '', recall: '' };
+    due = a.calDue; lead = +setting_('CAL_WARN_DAYS');
+  }
+  var recall = addDays_(due, -lead), today = today_();
+  return { state: today > due ? 'OVERDUE' : today >= recall ? 'SOON' : 'OK', due: due, recall: recall };
+}
+
+function calState_(a) { return calInfo_(a).state; }
+
+function isYmd_(s) { return /^\d{4}-\d{2}-\d{2}$/.test(String(s || '')); }
+
+/* ---- where things are: a project code (HO is a project), or a shop while at repair/calibration ---- */
+function homeProject_() { return String(setting_('HOME_PROJECT') || 'BPNP').toUpperCase(); }
+
+function locOf_(a) { return String(a.location || (a.status === 'RETIRED' ? '' : homeProject_())).toUpperCase(); }
+
+function projectByCode_(code) {
+  code = String(code || '').trim().toUpperCase();
+  if (!code) return null;
+  var p = rows_('Projects').filter(function (x) { return String(x.code).toUpperCase() === code; })[0];
+  if (p) return p;
+  // a database without the Projects tab still knows HO and its own project
+  if (!rows_('Projects').length && (code === 'HO' || code === homeProject_())) return { code: code, name: code === 'HO' ? 'สำนักงานใหญ่' : code, closedAt: '' };
+  return null;
+}
+
+function userProject_(user) {
+  if (!user) return '';
+  var k = 'up:' + user.empId;
+  if (_memo[k] === undefined) {
+    var e = employee_(user.empId);
+    _memo[k] = String((e && e.project) || homeProject_()).toUpperCase();
+  }
+  return _memo[k];
 }
 
 function pubAsset_(a, me) {
-  var cal = calState_(a);
-  var blocked = a.status !== 'AVAILABLE' || (cal === 'OVERDUE' && setting_('CAL_BLOCK') === 'TRUE');
+  var ci = calInfo_(a), loc = locOf_(a);
+  var here = !me || loc === userProject_(me);
+  var blocked = a.status !== 'AVAILABLE' || !here || (ci.state === 'OVERDUE' && setting_('CAL_BLOCK') === 'TRUE');
   return {
     code: a.code, kit: a.kit, category: a.category, type: a.type, name: a.name, brand: a.brand, model: a.model,
     serial: a.serial, status: a.status, ticketId: a.ticketId, holderName: a.holderName, since: a.since,
     mine: !!(me && a.holder && normEmp_(a.holder) === normEmp_(me.empId)),
-    calDue: a.calDue, cal: cal, ok: !blocked, note: a.note
+    calDue: ci.due, cal: ci.state, ok: !blocked, note: a.note, location: loc, elsewhere: !here
   };
 }
 
@@ -558,12 +661,13 @@ function borrow_(user, req) {
   if (due.getTime() < Date.now() - 5 * 60000) fail_('วันเวลาคืนต้องไม่อยู่ในอดีต', 'INPUT');
   if (due.getTime() > Date.now() + 62 * 86400000) fail_('กำหนดคืนต้องไม่เกิน 60 วัน', 'INPUT');
   return withLock_(function () {
-    var map = assetMap_(), bad = [];
+    var map = assetMap_(), bad = [], myProj = userProject_(user);
     var uniq = codes.filter(function (c, i) { return codes.indexOf(c) === i; });
     uniq.forEach(function (c) {
       var a = map[c];
       if (!a) bad.push({ code: c, why: 'NOT_FOUND' });
       else if (a.status !== 'AVAILABLE') bad.push({ code: c, why: a.status, holder: a.holderName, ticketId: a.ticketId });
+      else if (locOf_(a) !== myProj) bad.push({ code: c, why: 'ELSEWHERE', location: locOf_(a) });
       else if (calState_(a) === 'OVERDUE' && setting_('CAL_BLOCK') === 'TRUE') bad.push({ code: c, why: 'CAL_OVERDUE' });
     });
     if (bad.length) {
@@ -609,13 +713,13 @@ function ticketView_(user, ticketId) {
   var t = rows_('Tickets').filter(function (x) { return x.ticketId === ticketId; })[0];
   if (!t) fail_('ไม่พบใบเบิก ' + ticketId, 'NOT_FOUND');
   var own = t.lineUserId === user.lineUserId;
-  if (!own && !isStaff_(user)) fail_('ใบเบิกนี้เป็นของผู้อื่น', 'FORBIDDEN');
+  if (!own && !canRead_(user)) fail_('ใบเบิกนี้เป็นของผู้อื่น', 'FORBIDDEN');
   var map = assetMap_();
   var items = rows_('TicketItems').filter(function (x) { return x.ticketId === ticketId; }).map(function (x) {
     var a = map[x.code.toUpperCase()] || {};
     return {
       code: x.code, kit: x.kit, name: x.name, brand: a.brand || '', model: a.model || '', returnedAt: x.returnedAt,
-      cond: x.cond, note: x.note, receivedBy: x.receivedBy, cal: a.code ? calState_(a) : '', calDue: a.calDue || ''
+      cond: x.cond, note: x.note, receivedBy: x.receivedBy, cal: a.code ? calState_(a) : '', calDue: a.code ? calInfo_(a).due : ''
     };
   });
   var card = ticketCard_(t);
@@ -746,7 +850,7 @@ function overview_(staff) {
   var open = rows_('Tickets').filter(function (t) { return t.status === 'OPEN' || t.status === 'PARTIAL'; }).map(ticketCard_);
   open.sort(function (a, b) { return (b.overdue - a.overdue) || (a.dueAt < b.dueAt ? -1 : 1); });
   var calSoon = assets.filter(function (a) { var c = calState_(a); return c === 'SOON' || c === 'OVERDUE'; })
-    .map(function (a) { return { code: a.code, name: a.name, model: a.model, calDue: a.calDue, cal: calState_(a), status: a.status }; });
+    .map(function (a) { var ci = calInfo_(a); return { code: a.code, name: a.name, model: a.model, calDue: ci.due, cal: ci.state, status: a.status, location: locOf_(a) }; });
   return {
     role: staff.role,
     counts: counts, total: assets.length,
@@ -768,7 +872,7 @@ function overview_(staff) {
       return { lineUserId: u.lineUserId, empId: u.empId, name: u.name, role: u.role, lastSeen: u.lastSeen };
     }) : [],
     calSoon: calSoon,
-    sheetUrl: 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit'
+    sheetUrl: 'https://docs.google.com/spreadsheets/d/' + sheetId_() + '/edit'
   };
 }
 
@@ -793,19 +897,50 @@ function resolveIssue_(staff, req) {
 
 /* ---------------- admin back office ---------------- */
 
-var ASSET_STATUSES = ['AVAILABLE', 'REPAIR', 'LOST', 'MISSING', 'CHECK', 'RETIRED'];
-var ASSET_FIELDS = ['kit', 'category', 'type', 'name', 'brand', 'model', 'serial', 'office', 'status', 'calLast', 'calDue', 'note'];
+/* statuses an editor may set directly; RESERVED, AT_REPAIR, AT_CAL, DISPOSAL_PENDING and RETIRED come only from move_ */
+var ASSET_STATUSES = ['AVAILABLE', 'REPAIR', 'LOST', 'MISSING', 'CHECK'];
+var MOVE_ONLY = { RESERVED: 1, AT_REPAIR: 1, AT_CAL: 1, DISPOSAL_PENDING: 1, RETIRED: 1, ON_LOAN: 1 };
+var ASSET_FIELDS = ['kit', 'category', 'type', 'name', 'brand', 'model', 'serial', 'office', 'status', 'calLast', 'calDue', 'note',
+  'calType', 'calCert', 'po', 'owner', 'warrantyStart', 'warrantyEnd'];
+
+function snKey_(s) {
+  s = String(s || '').trim().toUpperCase();
+  return !s || s === '-' || s === 'N/A' || s.indexOf('ยังไม่ระบุ') === 0 ? '' : s;
+}
+
+function adminRow_(a) {
+  var ci = calInfo_(a);
+  return {
+    code: a.code, kit: a.kit, category: a.category, type: a.type, name: a.name, brand: a.brand, model: a.model,
+    serial: a.serial, office: a.office, status: a.status, ticketId: a.ticketId, holderName: a.holderName,
+    since: a.since, calLast: a.calLast, calDue: ci.due, recall: ci.recall, cal: ci.state, calType: a.calType, calCert: a.calCert,
+    note: a.note, location: locOf_(a), reservedFor: a.reservedFor, custodian: a.custodian, po: a.po, owner: a.owner,
+    warrantyStart: a.warrantyStart, warrantyEnd: a.warrantyEnd, confirmed: String(a.confirmed).toUpperCase() !== 'FALSE'
+  };
+}
 
 function adminAssets_(staff) {
-  var assets = rows_('Assets').map(function (a) {
-    return {
-      code: a.code, kit: a.kit, category: a.category, type: a.type, name: a.name, brand: a.brand, model: a.model,
-      serial: a.serial, office: a.office, status: a.status, ticketId: a.ticketId, holderName: a.holderName,
-      since: a.since, calLast: a.calLast, calDue: a.calDue, cal: calState_(a), note: a.note
-    };
-  });
+  var assets = rows_('Assets').map(adminRow_);
   var kits = rows_('Kits').map(function (k) { return { kit: k.kit, name: k.name, category: k.category, main: k.main }; });
-  return { assets: assets, kits: kits, statuses: ASSET_STATUSES, canEdit: staff.role === 'ADMIN' };
+  return { assets: assets, kits: kits, statuses: ASSET_STATUSES, canEdit: canStore_(staff), projects: projectsLite_(), shops: shops_(),
+    calTypes: Object.keys(rulesMap_()).map(function (k) { return rulesMap_()[k].type; }), home: homeProject_() };
+}
+
+function projectsLite_() {
+  var list = rows_('Projects').map(function (p) { return { code: String(p.code).toUpperCase(), name: p.name, closed: !!p.closedAt }; });
+  if (!list.length) list = [{ code: 'HO', name: 'สำนักงานใหญ่', closed: false }, { code: homeProject_(), name: homeProject_(), closed: false }];
+  return list;
+}
+
+function shops_() {
+  var s = {};
+  rows_('Assets').forEach(function (a) { if ((a.status === 'AT_REPAIR' || a.status === 'AT_CAL') && a.location) s[a.location] = 1; });
+  rows_('Events').forEach(function (e) {
+    if (/^(MOVE_sendRepair|MOVE_sendCal|SI_)/.test(e.action) && e.detail.indexOf('"shop"') >= 0) {
+      try { var d = JSON.parse(e.detail); if (d.shop) s[d.shop] = 1; } catch (x) { /* ignore */ }
+    }
+  });
+  return Object.keys(s).sort();
 }
 
 function assetDetail_(staff, req) {
@@ -822,15 +957,23 @@ function assetDetail_(staff, req) {
   var issues = rows_('Issues').filter(function (i) { return String(i.code).toUpperCase() === code; }).map(function (i) {
     return { issueId: i.issueId, at: i.at, type: i.type, note: i.note, status: i.status, reporter: i.reporter, ticketId: i.ticketId };
   });
-  var out = pubAsset_(a, null);
-  out.office = a.office; out.calLast = a.calLast; out.updatedAt = a.updatedAt;
+  var moves = rows_('Events').filter(function (e) { return String(e.ref).toUpperCase() === code && /^(MOVE_|SI_|ASSET_)/.test(e.action); }).map(function (e) {
+    var d = {};
+    try { d = JSON.parse(e.detail || '{}'); } catch (x) { /* keep empty */ }
+    return { at: e.at, actor: e.actor, action: e.action, d: d };
+  });
+  moves.sort(function (p, q) { return p.at < q.at ? 1 : -1; });
+  var out = adminRow_(a);
+  out.updatedAt = a.updatedAt;
   var k = a.kit ? rows_('Kits').filter(function (x) { return x.kit === a.kit; })[0] : null;
   out.kitName = k ? k.name : '';
-  out.kitItems = a.kit ? rows_('Assets').filter(function (x) { return x.kit === a.kit; }).map(function (x) { return { code: x.code, name: x.name, status: x.status }; }) : [];
-  return { asset: out, history: hist.slice(0, 40), loans: hist.length, issues: issues, canEdit: staff.role === 'ADMIN' };
+  out.kitItems = a.kit ? rows_('Assets').filter(function (x) { return x.kit === a.kit; }).map(function (x) { return { code: x.code, name: x.name, status: x.status, location: locOf_(x) }; }) : [];
+  return { asset: out, history: hist.slice(0, 40), loans: hist.length, issues: issues, moves: moves.slice(0, 60),
+    canEdit: canStore_(staff), ops: canStore_(staff) ? allowedOps_(a) : [], projects: projectsLite_(), shops: shops_(),
+    calTypes: Object.keys(rulesMap_()).map(function (x) { return rulesMap_()[x].type; }) };
 }
 
-function isDate_(s) { return s === '' || /^\d{4}-\d{2}-\d{2}$/.test(s); }
+function isDate_(s) { return s === '' || isYmd_(s); }
 
 function assetSave_(admin, req) {
   var code = String(req.code || '').trim().toUpperCase();
@@ -842,18 +985,32 @@ function assetSave_(admin, req) {
     var clean = {};
     ASSET_FIELDS.forEach(function (k) {
       if (f[k] === undefined) return;
-      var v = String(f[k] == null ? '' : f[k]).trim().slice(0, 300);
+      var v = String(f[k] == null ? '' : f[k]).trim().slice(0, k === 'note' ? 1200 : 300);
       if (k === 'kit' || k === 'type') v = v.toUpperCase();
       clean[k] = v;
     });
-    if (clean.status !== undefined && ASSET_STATUSES.indexOf(clean.status) < 0) fail_('สถานะไม่ถูกต้อง', 'INPUT');
-    if (clean.calLast !== undefined && !isDate_(clean.calLast)) fail_('วันที่สอบเทียบล่าสุดต้องเป็น ปปปป-ดด-วว', 'INPUT');
-    if (clean.calDue !== undefined && !isDate_(clean.calDue)) fail_('วันครบกำหนดสอบเทียบต้องเป็น ปปปป-ดด-วว', 'INPUT');
+    if (clean.status !== undefined && ASSET_STATUSES.indexOf(clean.status) < 0) fail_('สถานะนี้เปลี่ยนผ่านหน้าแก้ไขไม่ได้ ให้ใช้รายการเคลื่อนย้าย', 'INPUT');
+    ['calLast', 'calDue', 'warrantyStart', 'warrantyEnd'].forEach(function (k) {
+      if (clean[k] !== undefined && !isDate_(clean[k])) fail_('วันที่ต้องเป็น ปปปป-ดด-วว (' + k + ')', 'INPUT');
+    });
+    var calLast = clean.calLast !== undefined ? clean.calLast : (a ? a.calLast : ''), calDue = clean.calDue !== undefined ? clean.calDue : (a ? a.calDue : '');
+    if (calLast && calDue && calDue < calLast) fail_('วันครบกำหนดสอบเทียบต้องไม่ก่อนวันสอบเทียบล่าสุด', 'INPUT');
+    if (calLast && calLast > today_()) fail_('วันสอบเทียบล่าสุดต้องไม่อยู่ในอนาคต', 'INPUT');
+    var ws = clean.warrantyStart !== undefined ? clean.warrantyStart : (a ? a.warrantyStart : ''), we = clean.warrantyEnd !== undefined ? clean.warrantyEnd : (a ? a.warrantyEnd : '');
+    if (ws && we && we < ws) fail_('วันหมดประกันต้องไม่ก่อนวันเริ่มประกัน', 'INPUT');
+    if (clean.calType && !rulesMap_()[clean.calType.toUpperCase()]) fail_('ยังไม่มีกติกาสอบเทียบของประเภท ' + clean.calType + ' ให้เพิ่มในแท็บสอบเทียบก่อน', 'INPUT');
+    if (clean.serial !== undefined && snKey_(clean.serial) && (!a || snKey_(a.serial) !== snKey_(clean.serial))) {
+      var dupSn = rows_('Assets').filter(function (x) { return x !== a && snKey_(x.serial) === snKey_(clean.serial); })[0];
+      if (dupSn) fail_('S/N ' + clean.serial + ' ซ้ำกับ ' + dupSn.code + ' ตรวจป้ายเครื่องก่อนบันทึก', 'DUP_SN');
+    }
     if (req.isNew) {
       if (a) fail_('มีรหัส ' + code + ' อยู่แล้ว', 'DUP');
       var m = code.match(CODE_RE);
+      var loc = String(f.location || homeProject_()).toUpperCase();
+      if (!projectByCode_(loc)) fail_('ไม่พบโครงการ ' + loc, 'INPUT');
       var row = { code: code, kit: '', category: '', type: m ? m[3] : '', name: '', brand: '', model: '', serial: '', office: '',
-        status: 'AVAILABLE', ticketId: '', holder: '', holderName: '', since: '', calLast: '', calDue: '', note: '', updatedAt: at };
+        status: 'AVAILABLE', ticketId: '', holder: '', holderName: '', since: '', calLast: '', calDue: '', note: '', updatedAt: at,
+        location: loc, reservedFor: '', custodian: '', calType: '', calCert: '', po: '', owner: '', warrantyStart: '', warrantyEnd: '', confirmed: 'TRUE' };
       if (m && m[2] !== '000') row.kit = code.split('-').slice(0, 4).join('-');
       if (m) row.category = { GN: 'GNSS', DR: 'Drone', DL: 'Digital Level', OF: 'Office' }[m[1]];
       Object.keys(clean).forEach(function (k) { if (clean[k] !== '' || k === 'note') row[k] = clean[k]; });
@@ -862,11 +1019,14 @@ function assetSave_(admin, req) {
       if (row.kit && !rows_('Kits').filter(function (k) { return k.kit === row.kit; }).length) {
         append_('Kits', [{ kit: row.kit, name: row.category + ' set ' + row.kit.split('-')[3] + (row.model ? ' · ' + row.brand + ' ' + row.model : ''), category: row.category, main: code, items: 1, office: row.office }]);
       }
-      event_(admin.name, 'ASSET_ADD', code, { name: row.name, kit: row.kit });
+      event_(admin.name, 'ASSET_ADD', code, { name: row.name, kit: row.kit, location: loc });
     } else {
       if (!a) fail_('ไม่พบอุปกรณ์ ' + code, 'NOT_FOUND');
-      if (a.status === 'ON_LOAN' && clean.status !== undefined && clean.status !== 'ON_LOAN') fail_('อุปกรณ์นี้ถูกเบิกอยู่ (' + a.ticketId + ') ต้องคืนผ่านใบเบิกก่อนจึงเปลี่ยนสถานะได้', 'ON_LOAN');
-      if (a.status === 'ON_LOAN') delete clean.status;
+      if (clean.status !== undefined && MOVE_ONLY[a.status] && clean.status !== a.status) {
+        fail_(a.status === 'ON_LOAN' ? 'อุปกรณ์นี้ถูกเบิกอยู่ (' + a.ticketId + ') ต้องคืนผ่านใบเบิกก่อนจึงเปลี่ยนสถานะได้'
+          : 'สถานะ ' + a.status + ' เปลี่ยนผ่านรายการเคลื่อนย้ายเท่านั้น', a.status === 'ON_LOAN' ? 'ON_LOAN' : 'INPUT');
+      }
+      if (MOVE_ONLY[a.status]) delete clean.status;
       Object.keys(clean).forEach(function (k) { if (String(a[k] || '') !== clean[k]) changes[k] = [a[k] || '', clean[k]]; });
       if (!Object.keys(changes).length) return assetDetail_(admin, { code: code });
       var upd = {};
@@ -876,6 +1036,303 @@ function assetSave_(admin, req) {
       event_(admin.name, changes.status ? 'ASSET_STATUS' : 'ASSET_EDIT', code, changes);
     }
     return assetDetail_(admin, { code: code });
+  });
+}
+
+/* ---------------- HO level: reserve, issue, transfer, return, repair, calibration, disposal ----------------
+ * Ported from Survey Inventory's move rules. Each op lists the statuses it starts from; the server checks them
+ * again under the lock, so the screen cannot skip a step. A loaned item (ON_LOAN) must come back through its
+ * ticket first. Every moved item gets one MOVE_<op> event with its state before and after. */
+var MOVE_OPS = {
+  reserve: ['AVAILABLE'], issue: ['AVAILABLE', 'RESERVED'], transfer: ['AVAILABLE'], returnHO: ['AVAILABLE', 'RESERVED'],
+  repairWait: ['AVAILABLE', 'RESERVED'], sendRepair: ['REPAIR'], repairDone: ['AT_REPAIR'],
+  sendCal: ['AVAILABLE'], calibrated: ['AT_CAL'], recordCal: ['AVAILABLE', 'RESERVED', 'REPAIR', 'AT_REPAIR'],
+  requestDisposal: ['AVAILABLE', 'RESERVED', 'REPAIR', 'AT_REPAIR', 'AT_CAL', 'LOST', 'MISSING', 'CHECK'],
+  completeDisposal: ['DISPOSAL_PENDING'], cancelDisposal: ['DISPOSAL_PENDING'],
+  verify: ['AVAILABLE', 'RESERVED', 'REPAIR', 'AT_REPAIR', 'AT_CAL', 'LOST', 'MISSING', 'CHECK']
+};
+var KIT_OPS = { reserve: 1, issue: 1, transfer: 1, returnHO: 1 };
+
+function opFits_(op, a) {
+  if (MOVE_OPS[op].indexOf(a.status) < 0) return false;
+  var loc = locOf_(a);
+  if (op === 'reserve' || op === 'sendCal') return loc === 'HO';
+  if (op === 'issue') return loc === 'HO';
+  if (op === 'transfer') return loc !== 'HO';
+  if (op === 'returnHO') return a.status === 'RESERVED' || loc !== 'HO';
+  return true;
+}
+
+function allowedOps_(a) { return Object.keys(MOVE_OPS).filter(function (op) { return opFits_(op, a); }); }
+
+function snap_(a) { return { status: a.status, location: locOf_(a), reservedFor: a.reservedFor || '', custodian: a.custodian || '' }; }
+
+function move_(user, req) {
+  var op = String(req.op || '');
+  if (!MOVE_OPS[op]) fail_('ไม่รู้จักรายการนี้', 'INPUT');
+  var codes = (req.codes || (req.code ? [req.code] : [])).map(function (c) { return String(c).trim().toUpperCase(); }).filter(String);
+  codes = codes.filter(function (c, i) { return codes.indexOf(c) === i; });
+  if (!codes.length) fail_('ยังไม่ได้เลือกเครื่อง', 'INPUT');
+  if (codes.length > 200) fail_('ทำได้ไม่เกิน 200 รายการต่อครั้ง', 'INPUT');
+  var note = String(req.note || '').trim().slice(0, 500);
+  var custodian = String(req.custodian || '').trim().slice(0, 80);
+  var shop = String(req.shop || '').trim().slice(0, 80);
+  if ((op === 'requestDisposal' || op === 'completeDisposal' || op === 'cancelDisposal') && !note) fail_('กรุณาระบุเหตุผลหรือเลขเอกสาร', 'INPUT');
+  if ((op === 'sendRepair' || op === 'sendCal') && !shop) fail_('กรุณาระบุชื่อร้าน', 'INPUT');
+  var calLast = String(req.calLast || '').trim(), calDue = String(req.calDue || '').trim(), cert = String(req.cert || '').trim().slice(0, 80);
+  if (op === 'calibrated' || op === 'recordCal') {
+    if (!isYmd_(calLast)) fail_('กรุณาระบุวันที่สอบเทียบ (ปปปป-ดด-วว)', 'INPUT');
+    if (calLast > today_()) fail_('วันที่สอบเทียบต้องไม่อยู่ในอนาคต', 'INPUT');
+    if (calDue && (!isYmd_(calDue) || calDue < calLast)) fail_('วันครบกำหนดต้องไม่ก่อนวันสอบเทียบ', 'INPUT');
+  }
+  return withLock_(function () {
+    var map = assetMap_(), at = now_(), bad = [], plan = [], seen = {};
+    var proj = null, target = null;
+    if (op === 'reserve' || op === 'issue' || op === 'transfer' || (op === 'verify' && req.status === 'RESERVED')) {
+      proj = projectByCode_(req.project);
+      if (!proj) fail_('ไม่พบโครงการ ' + (req.project || ''), 'INPUT');
+      if (proj.closedAt) fail_('โครงการ ' + proj.code + ' ปิดแล้ว', 'INPUT');
+      if (String(proj.code).toUpperCase() === 'HO') fail_('เลือกโครงการปลายทางที่ไม่ใช่ HO', 'INPUT');
+      if (!custodian) fail_('กรุณาระบุผู้รับผิดชอบที่โครงการ', 'INPUT');
+    }
+    if (op === 'verify') {
+      target = String(req.status || '');
+      if (['AVAILABLE', 'RESERVED', 'REPAIR', 'AT_REPAIR', 'AT_CAL'].indexOf(target) < 0) fail_('สถานะที่ยืนยันไม่ถูกต้อง', 'INPUT');
+      if (target === 'AT_REPAIR' || target === 'AT_CAL') { if (!shop) fail_('กรุณาระบุชื่อร้าน', 'INPUT'); }
+      else if (target !== 'RESERVED') {
+        var vp = projectByCode_(req.location);
+        if (!vp) fail_('ไม่พบโครงการ ' + (req.location || ''), 'INPUT');
+        if (vp.closedAt) fail_('โครงการ ' + vp.code + ' ปิดแล้ว', 'INPUT');
+      }
+    }
+    var list = codes.slice();
+    if (req.withKit && KIT_OPS[op]) {
+      codes.forEach(function (c) {
+        var a = map[c];
+        // the rest of the case: same set, same place (a box left at the site does not travel with a drone kept at HO)
+        if (a && a.kit) rows_('Assets').forEach(function (x) {
+          if (x.kit === a.kit && x.status !== 'RETIRED' && locOf_(x) === locOf_(a) && list.indexOf(x.code.toUpperCase()) < 0) list.push(x.code.toUpperCase());
+        });
+      });
+    }
+    list.forEach(function (c) {
+      if (seen[c]) return;
+      seen[c] = 1;
+      var a = map[c];
+      if (!a) { bad.push({ code: c, why: 'NOT_FOUND' }); return; }
+      if (a.status === 'ON_LOAN') { bad.push({ code: c, why: 'ON_LOAN', ticketId: a.ticketId, holder: a.holderName }); return; }
+      if (!opFits_(op, a)) { bad.push({ code: c, why: 'STATE', status: a.status, location: locOf_(a) }); return; }
+      var before = snap_(a), to = {}, ci = calInfo_(a), calFlag = '';
+      switch (op) {
+        case 'reserve': to = { status: 'RESERVED', location: 'HO', reservedFor: proj.code, custodian: custodian }; break;
+        case 'issue': to = { status: 'AVAILABLE', location: proj.code, reservedFor: '', custodian: custodian }; break;
+        case 'transfer':
+          if (locOf_(a) === String(proj.code).toUpperCase()) { bad.push({ code: c, why: 'SAME_PROJECT' }); return; }
+          to = { status: 'AVAILABLE', location: proj.code, reservedFor: '', custodian: custodian }; break;
+        case 'returnHO': to = { status: 'AVAILABLE', location: 'HO', reservedFor: '', custodian: '' }; break;
+        case 'repairWait': to = { status: 'REPAIR' }; break;
+        case 'sendRepair': to = { status: 'AT_REPAIR', location: shop, reservedFor: '', custodian: '' }; break;
+        case 'repairDone': to = { status: 'AVAILABLE', location: 'HO', reservedFor: '', custodian: '' }; break;
+        case 'sendCal': to = { status: 'AT_CAL', location: shop, reservedFor: '', custodian: '' }; break;
+        case 'calibrated':
+        case 'recordCal':
+          if (a.calLast && isYmd_(a.calLast) && calLast < a.calLast) { bad.push({ code: c, why: 'CAL_OLDER', calLast: a.calLast }); return; }
+          var r = a.calType ? rulesMap_()[String(a.calType).toUpperCase()] : null;
+          var due = calDue || (r && r.months ? addMonths_(calLast, r.months) : '');
+          to = { calLast: calLast, calDue: due, calCert: cert || a.calCert || '' };
+          if (op === 'calibrated') { to.status = 'AVAILABLE'; to.location = 'HO'; to.reservedFor = ''; to.custodian = ''; }
+          break;
+        case 'requestDisposal': to = { status: 'DISPOSAL_PENDING' }; break;
+        case 'completeDisposal': to = { status: 'RETIRED', location: '', reservedFor: '', custodian: '' }; break;
+        case 'cancelDisposal':
+          var prev = lastEvent_(c, 'MOVE_requestDisposal');
+          if (!prev || !prev.from) { bad.push({ code: c, why: 'NO_ORIGIN' }); return; }
+          to = { status: prev.from.status, location: prev.from.location, reservedFor: prev.from.reservedFor || '', custodian: prev.from.custodian || '' };
+          break;
+        case 'verify':
+          if (target === 'AVAILABLE' || target === 'REPAIR') to = { status: target, location: String(req.location).toUpperCase(), reservedFor: '', custodian: custodian };
+          else if (target === 'RESERVED') to = { status: 'RESERVED', location: 'HO', reservedFor: proj.code, custodian: custodian };
+          else to = { status: target, location: shop, reservedFor: '', custodian: '' };
+          break;
+      }
+      // instruments past due or without calibration data cannot go out to a project (Survey Inventory's rule)
+      var toProject = (op === 'issue' || op === 'transfer' || (op === 'verify' && to.status === 'AVAILABLE')) && String(to.location).toUpperCase() !== 'HO';
+      if (toProject && (ci.state === 'OVERDUE' || ci.state === 'MISSING') && setting_('HO_CAL_BLOCK') === 'TRUE') {
+        if (op !== 'verify') { bad.push({ code: c, why: 'CAL_' + ci.state, calDue: ci.due }); return; }
+        // verify records where an instrument really is; with an expired calibration it needs a reason and is flagged
+        if (!note) { bad.push({ code: c, why: 'CAL_NOTE', calDue: ci.due }); return; }
+        calFlag = ci.state;
+      }
+      plan.push({ a: a, before: before, to: to, calFlag: calFlag });
+    });
+    if (bad.length) {
+      var e = new Error(JSON.stringify({ msg: 'ทำรายการไม่ได้ ' + bad.length + ' รายการ', bad: bad }));
+      e.code = 'MOVE_BLOCKED';
+      throw e;
+    }
+    var confirm = { reserve: 1, issue: 1, transfer: 1, returnHO: 1, sendRepair: 1, repairDone: 1, sendCal: 1, calibrated: 1, verify: 1 }[op];
+    var evs = [];
+    plan.forEach(function (p) {
+      var upd = {};
+      Object.keys(p.to).forEach(function (k) { upd[k] = p.to[k]; });
+      if (confirm) upd.confirmed = 'TRUE';
+      upd.updatedAt = at;
+      update_('Assets', p.a, upd);
+      var d = { from: p.before, to: snap_(p.a) };
+      if (note) d.note = note;
+      if (shop) d.shop = shop;
+      if (op === 'calibrated' || op === 'recordCal') d.cal = { calLast: p.to.calLast, calDue: p.to.calDue, cert: p.to.calCert };
+      if (p.calFlag) d.calFlag = p.calFlag;
+      if (list.length > codes.length) d.withKit = true;
+      evs.push(evRow_(user.name, 'MOVE_' + op, p.a.code, d, at));
+    });
+    append_('Events', evs);
+    return { op: op, moved: plan.length, assets: plan.map(function (p) { return adminRow_(p.a); }) };
+  });
+}
+
+function evRow_(actor, action, ref, detail, at) {
+  if (_actBy) { actor = actor + ' (กดแทนโดย ' + _actBy + ')'; detail = detail || {}; detail.actBy = _actBy; }
+  return { at: at || now_(), actor: actor, action: action, ref: ref || '', detail: detail ? JSON.stringify(detail).slice(0, 2000) : '' };
+}
+
+function lastEvent_(code, action) {
+  var best = null;
+  rows_('Events').forEach(function (e) {
+    if (e.action === action && String(e.ref).toUpperCase() === code && (!best || e.at >= best.at)) best = e;
+  });
+  if (!best) return null;
+  try { return JSON.parse(best.detail || '{}'); } catch (x) { return null; }
+}
+
+/* ---------------- projects ---------------- */
+
+function outstanding_(code) {
+  code = String(code).toUpperCase();
+  var out = [];
+  rows_('Assets').forEach(function (a) {
+    if (a.status === 'RETIRED') return;
+    if (locOf_(a) === code || String(a.reservedFor).toUpperCase() === code) { out.push(a.code); return; }
+    if (a.status === 'AT_REPAIR' || a.status === 'AT_CAL' || a.status === 'DISPOSAL_PENDING') {
+      // at a shop, but it left from this project and has not come back yet
+      var last = null;
+      rows_('Events').forEach(function (e) {
+        if (String(e.ref).toUpperCase() === a.code.toUpperCase() && /^(MOVE_|SI_)/.test(e.action) && (!last || e.at >= last.at)) last = e;
+      });
+      try { if (last && String(JSON.parse(last.detail).from.location).toUpperCase() === code) out.push(a.code); } catch (x) { /* ignore */ }
+    }
+  });
+  return out;
+}
+
+function projectsList_(user) {
+  var cnt = {};
+  rows_('Assets').forEach(function (a) {
+    if (a.status === 'RETIRED') return;
+    var l = locOf_(a), r = String(a.reservedFor || '').toUpperCase();
+    cnt[l] = cnt[l] || { at: 0, onLoan: 0, reserved: 0, cal: 0 };
+    cnt[l].at++;
+    if (a.status === 'ON_LOAN') cnt[l].onLoan++;
+    var s = calState_(a);
+    if (s === 'OVERDUE' || s === 'SOON' || s === 'MISSING') cnt[l].cal++;
+    if (r) { cnt[r] = cnt[r] || { at: 0, onLoan: 0, reserved: 0, cal: 0 }; cnt[r].reserved++; }
+  });
+  var projects = rows_('Projects').map(function (p) {
+    var c = cnt[String(p.code).toUpperCase()] || { at: 0, onLoan: 0, reserved: 0, cal: 0 };
+    return { code: String(p.code).toUpperCase(), name: p.name, closedAt: p.closedAt, note: p.note, at: c.at, onLoan: c.onLoan, reserved: c.reserved, cal: c.cal };
+  });
+  var known = {};
+  projects.forEach(function (p) { known[p.code] = 1; });
+  var shops = Object.keys(cnt).filter(function (k) { return !known[k] && k; }).map(function (k) { return { name: k, at: cnt[k].at }; });
+  return { projects: projects, shops: shops, canEdit: canStore_(user), home: homeProject_() };
+}
+
+function projectSave_(user, req) {
+  var code = String(req.code || '').trim().toUpperCase(), name = String(req.name || '').trim().slice(0, 120), note = String(req.note || '').trim().slice(0, 300);
+  if (!/^[A-Z0-9][A-Z0-9\-_.]{0,19}$/.test(code)) fail_('รหัสโครงการใช้ได้เฉพาะ A-Z 0-9 - _ . ไม่เกิน 20 ตัว', 'INPUT');
+  if (!name) fail_('กรุณากรอกชื่อโครงการ', 'INPUT');
+  return withLock_(function () {
+    var p = rows_('Projects').filter(function (x) { return String(x.code).toUpperCase() === code; })[0];
+    if (req.isNew) {
+      if (p) fail_('มีรหัสโครงการ ' + code + ' อยู่แล้ว', 'DUP');
+      append_('Projects', [{ code: code, name: name, closedAt: '', note: note, createdAt: now_() }]);
+      event_(user.name, 'PROJECT_ADD', code, { name: name });
+    } else {
+      if (!p) fail_('ไม่พบโครงการ ' + code, 'NOT_FOUND');
+      var ch = {};
+      if (p.name !== name) ch.name = [p.name, name];
+      if ((p.note || '') !== note) ch.note = [p.note || '', note];
+      if (Object.keys(ch).length) { update_('Projects', p, { name: name, note: note }); event_(user.name, 'PROJECT_EDIT', code, ch); }
+    }
+    return projectsList_(user);
+  });
+}
+
+function projectStatus_(user, req) {
+  var code = String(req.code || '').trim().toUpperCase();
+  if (code === 'HO') fail_('HO เป็นจุดรับคืนของระบบ ปิดไม่ได้', 'INPUT');
+  return withLock_(function () {
+    var p = rows_('Projects').filter(function (x) { return String(x.code).toUpperCase() === code; })[0];
+    if (!p) fail_('ไม่พบโครงการ ' + code, 'NOT_FOUND');
+    if (req.close) {
+      if (p.closedAt) return projectsList_(user);
+      var left = outstanding_(code);
+      if (left.length) {
+        var e = new Error(JSON.stringify({ msg: 'ยังมีเครื่องค้างที่โครงการนี้ ' + left.length + ' รายการ', codes: left.slice(0, 3), total: left.length }));
+        e.code = 'PROJECT_BUSY';
+        throw e;
+      }
+      update_('Projects', p, { closedAt: now_() });
+      event_(user.name, 'PROJECT_CLOSE', code, {});
+    } else if (p.closedAt) {
+      update_('Projects', p, { closedAt: '' });
+      event_(user.name, 'PROJECT_REOPEN', code, {});
+    }
+    return projectsList_(user);
+  });
+}
+
+/* ---------------- calibration list and rules ---------------- */
+
+function calList_(user) {
+  var rules = rulesMap_(), use = {};
+  var items = rows_('Assets').filter(function (a) { return a.calType || a.calDue || a.calLast; }).map(function (a) {
+    var t = String(a.calType || '').toUpperCase();
+    if (t) use[t] = (use[t] || 0) + 1;
+    return adminRow_(a);
+  });
+  return {
+    rules: Object.keys(rules).map(function (k) { return { type: rules[k].type, months: rules[k].months, lead: rules[k].lead, used: use[k] || 0 }; }),
+    items: items, projects: projectsLite_(), canEdit: canStore_(user), today: today_()
+  };
+}
+
+function calRuleSave_(user, req) {
+  var type = String(req.type || '').trim().slice(0, 60);
+  if (!type) fail_('กรุณากรอกประเภทเครื่อง', 'INPUT');
+  var months = String(req.months), lead = String(req.lead);
+  if (!req.remove) {
+    if (!/^\d{1,2}$/.test(months) || +months > 60) fail_('รอบสอบเทียบต้องเป็นจำนวนเต็ม 0-60 เดือน', 'INPUT');
+    if (!/^\d{1,3}$/.test(lead) || +lead > 180) fail_('เรียกกลับก่อนต้องเป็นจำนวนเต็ม 0-180 วัน', 'INPUT');
+  }
+  return withLock_(function () {
+    var r = rows_('CalRules').filter(function (x) { return String(x.type).trim().toUpperCase() === type.toUpperCase(); })[0];
+    if (req.remove) {
+      if (!r) fail_('ไม่พบกติกา ' + type, 'NOT_FOUND');
+      var used = rows_('Assets').filter(function (a) { return String(a.calType).toUpperCase() === type.toUpperCase(); }).length;
+      if (used) fail_('ยังมีเครื่องประเภทนี้ ' + used + ' เครื่อง ลบกติกาไม่ได้ ให้ตั้งรอบเป็น 0 แทน', 'INPUT');
+      update_('CalRules', r, { type: '', months: '', lead: '', note: 'ลบโดย ' + user.name + ' ' + now_() });
+      event_(user.name, 'CALRULE_REMOVE', type, { months: r.months, lead: r.lead });
+    } else if (r) {
+      if (String(r.months) !== String(+months) || String(r.lead) !== String(+lead)) {
+        event_(user.name, 'CALRULE_EDIT', type, { months: [r.months, +months], lead: [r.lead, +lead] });
+        update_('CalRules', r, { months: +months, lead: +lead });
+      }
+    } else {
+      append_('CalRules', [{ type: type, months: +months, lead: +lead, note: '' }]);
+      event_(user.name, 'CALRULE_ADD', type, { months: +months, lead: +lead });
+    }
+    return calList_(user);
   });
 }
 
@@ -943,8 +1400,15 @@ function dashboard_(staff, req) {
     topI[key].loans[x.ticketId] = 1;
   });
   tP.forEach(function (t) { var k = t.empId + '|' + t.name; topU[k] = (topU[k] || 0) + 1; });
-  var counts = {};
-  assets.forEach(function (a) { counts[a.status] = (counts[a.status] || 0) + 1; });
+  var counts = {}, byLoc = {}, cal = {};
+  assets.forEach(function (a) {
+    counts[a.status] = (counts[a.status] || 0) + 1;
+    if (a.status !== 'RETIRED') { var l = locOf_(a); byLoc[l] = (byLoc[l] || 0) + 1; }
+    var s = calState_(a);
+    if (s) cal[s] = (cal[s] || 0) + 1;
+  });
+  var pmap = {};
+  projectsLite_().forEach(function (p) { pmap[p.code] = p.name; });
   var open = tickets.filter(function (t) { return t.status === 'OPEN' || t.status === 'PARTIAL'; });
   var borrowable = assets.filter(function (a) { return a.status === 'AVAILABLE' || a.status === 'ON_LOAN'; }).length;
   return {
@@ -961,6 +1425,9 @@ function dashboard_(staff, req) {
       users: rows_('Users').filter(function (u) { return u.status === 'ACTIVE'; }).length
     },
     counts: counts, total: assets.length,
+    byLocation: Object.keys(byLoc).map(function (k) { return { code: k, name: pmap[k] || '', project: !!pmap[k], n: byLoc[k] }; })
+      .sort(function (a, b) { return b.n - a.n; }),
+    cal: cal,
     byDay: Object.keys(byDay).map(function (k) { return { day: k, tickets: byDay[k].tickets, items: byDay[k].items }; }),
     topItems: Object.keys(topI).map(function (k) { return { key: k, name: topI[k].name, loans: Object.keys(topI[k].loans).length }; })
       .sort(function (a, b) { return b.loans - a.loans; }).slice(0, 10),
@@ -986,11 +1453,12 @@ function usersList_(staff) {
   var employees = emps.map(function (e) {
     return { empId: e.empId, name: e.name, nameEn: e.nameEn, nickname: e.nickname, nicknameEn: e.nicknameEn, position: e.position,
       email: e.email, phone: isAdmin ? e.phone : maskPhone_(e.phone), team: e.team, active: String(e.active).toUpperCase() !== 'FALSE',
-      registered: !!reg[normEmp_(e.empId)] };
+      registered: !!reg[normEmp_(e.empId)], project: String(e.project || '').toUpperCase() };
   });
   var settings = {};
   Object.keys(DEFAULTS).forEach(function (k) { settings[k] = setting_(k); });
-  return { users: users, employees: employees, settings: settings, me: staff.lineUserId, isAdmin: isAdmin };
+  return { users: users, employees: employees, settings: settings, me: staff.lineUserId, isAdmin: isAdmin, projects: projectsLite_(), home: homeProject_(),
+    sheetUrl: isAdmin ? 'https://docs.google.com/spreadsheets/d/' + sheetId_() + '/edit' : '' };
 }
 
 function userSave_(admin, req) {
@@ -999,7 +1467,7 @@ function userSave_(admin, req) {
     if (!u) fail_('ไม่พบผู้ใช้', 'NOT_FOUND');
     var upd = {};
     if (req.role !== undefined) {
-      if (!{ USER: 1, CHECKER: 1, ADMIN: 1 }[req.role]) fail_('สิทธิ์ไม่ถูกต้อง', 'INPUT');
+      if (ROLES.indexOf(req.role) < 0) fail_('สิทธิ์ไม่ถูกต้อง', 'INPUT');
       if (u.lineUserId === admin.lineUserId && req.role !== 'ADMIN') fail_('เปลี่ยนสิทธิ์ของตัวเองไม่ได้', 'INPUT');
       upd.role = req.role;
     }
@@ -1034,9 +1502,13 @@ function employeeSave_(admin, req) {
   return withLock_(function () {
     var e = rows_('Employees').filter(function (x) { return normEmp_(x.empId) === normEmp_(empId) && x.empId.toUpperCase() === empId.toUpperCase(); })[0]
       || rows_('Employees').filter(function (x) { return normEmp_(x.empId) && normEmp_(x.empId) === normEmp_(empId); })[0];
-    var keys = ['name', 'nameEn', 'nickname', 'nicknameEn', 'position', 'email', 'team'];
+    var keys = ['name', 'nameEn', 'nickname', 'nicknameEn', 'position', 'email', 'team', 'project'];
     var clean = {};
     keys.forEach(function (k) { if (f[k] !== undefined) clean[k] = String(f[k] || '').trim().slice(0, 120); });
+    if (clean.project) {
+      clean.project = clean.project.toUpperCase();
+      if (!projectByCode_(clean.project)) fail_('ไม่พบโครงการ ' + clean.project, 'INPUT');
+    }
     if (phone !== undefined) clean.phone = phone;
     if (f.active !== undefined) clean.active = f.active ? 'TRUE' : 'FALSE';
     if (req.isNew) {
@@ -1067,7 +1539,9 @@ function settingsSave_(admin, req) {
     CAL_BLOCK: function (x) { return x === 'TRUE' || x === 'FALSE'; },
     REMIND_BEFORE_MIN: function (x) { return /^\d{1,4}$/.test(x); },
     OVERDUE_DAILY_HOUR: function (x) { return /^\d{1,2}$/.test(x) && +x <= 23; },
-    NOTIFY_ADMINS_OVERDUE: function (x) { return x === 'TRUE' || x === 'FALSE'; }
+    NOTIFY_ADMINS_OVERDUE: function (x) { return x === 'TRUE' || x === 'FALSE'; },
+    HOME_PROJECT: function (x) { return !!projectByCode_(x) && x !== 'HO'; },
+    HO_CAL_BLOCK: function (x) { return x === 'TRUE' || x === 'FALSE'; }
   };
   var clean = {};
   Object.keys(v).forEach(function (k) {
@@ -1240,6 +1714,11 @@ function setup() {
     fresh_();
     if (!rows_('Settings').filter(function (x) { return x.key === k; }).length) append_('Settings', [{ key: k, value: DEFAULTS[k], note: '' }]);
   });
+  fresh_();
+  if (!rows_('Projects').length) {
+    append_('Projects', [{ code: 'HO', name: 'สำนักงานใหญ่', closedAt: '', note: 'จุดรับคืนของระบบ ปิดไม่ได้', createdAt: now_() },
+      { code: homeProject_(), name: homeProject_(), closedAt: '', note: '', createdAt: now_() }]);
+  }
   Logger.log('setup done: ' + ss.getUrl());
 }
 
