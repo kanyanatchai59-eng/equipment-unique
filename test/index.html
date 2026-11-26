@@ -1,0 +1,1319 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>[TEST] EQUIPMENT Unique</title>
+<link rel="icon" href="assets/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+<style>
+:root{--red:#95191F;--red2:#7a1419;--ink:#1d1d1f;--mut:#6b6b70;--line:#e6e2df;--bg:#f6f4f2;--ok:#1E7A46;--okbg:#e7f4ec;--warn:#A15C07;--warnbg:#fdf1e0;--bad:#b3261e;--badbg:#fbe9e8;--blue:#1F4E8C;--bluebg:#e8eef8}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;position:relative;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans Thai',system-ui,-apple-system,sans-serif;font-size:16px;line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}
+/* header: same look as the signing-queue app (UNIQUE logo on a white card over a red band) */
+.band{position:absolute;left:0;right:0;top:0;height:200px;background:var(--red);z-index:0}
+.hdr{position:sticky;top:10px;z-index:5;width:calc(100% - 24px);max-width:560px;margin:10px auto 0;background:rgba(255,255,255,.97);border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.14);display:flex;align-items:center;gap:8px;padding:9px 12px;min-height:62px}
+.hdr .back{border:0;background:none;color:var(--red);font-size:30px;line-height:1;padding:0 4px 4px 0;cursor:pointer}
+.logo{display:flex;align-items:center;gap:6px;flex:none}.logo svg{display:block}
+.hdr .app{font-size:11.5px;font-weight:700;color:var(--red);letter-spacing:.6px;border-left:1.5px solid var(--line);padding-left:8px;line-height:1.15}
+.hdr .lang{margin-left:auto;min-height:42px;min-width:42px;padding:0 8px;border-radius:12px;border:1.5px solid var(--line);background:#fff;color:var(--ink);font-weight:600;font-size:14px;cursor:pointer}
+.ptitle{position:relative;z-index:1;max-width:560px;margin:0 auto;padding:16px 16px 2px;color:#fff}
+.ptitle h1{font-size:21px;font-weight:600;margin:0;line-height:1.3;overflow-wrap:anywhere}
+main{position:relative;z-index:1;padding:10px 14px 110px;max-width:560px;margin:0 auto}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;margin:0 0 12px}
+.card h2{font-size:15px;margin:0 0 8px;font-weight:600}
+.hint{color:var(--mut);font-size:13px}
+.big{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:0 0 12px}
+.tile{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 8px 14px;text-align:center;cursor:pointer;min-height:118px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:8px}
+.tile b{font-size:15px;font-weight:600;line-height:1.3}
+.tile span.s{font-size:12px;color:var(--mut);line-height:1.3}
+.ic{width:48px;height:48px;border-radius:14px;background:#FBECED;color:var(--red);display:grid;place-items:center;flex:none}
+.ic svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.tile.main .ic{background:var(--red);color:#fff}
+.hello{color:#fff;opacity:.85;font-size:14px;margin-top:2px}
+.btn{display:block;width:100%;border:0;border-radius:12px;padding:13px 14px;font-weight:600;font-size:16px;cursor:pointer;background:var(--red);color:#fff;text-align:center}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.sec{background:#fff;color:var(--red);border:1.5px solid var(--red)}
+.btn.ghost{background:#f1eeec;color:var(--ink)}
+.btn.small{display:inline-block;width:auto;padding:7px 12px;font-size:14px;border-radius:10px}
+.row{display:flex;gap:8px;align-items:center}
+.row>*{min-width:0}
+.grow{flex:1}
+.bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);padding:10px 14px calc(10px + env(safe-area-inset-bottom));z-index:6}
+.bar .in{max-width:560px;margin:0 auto;display:flex;gap:8px}
+.bar .btn{flex:1}
+input.t,select.t,textarea.t{width:100%;border:1px solid #d6d1cd;border-radius:10px;padding:11px 12px;background:#fff;font-size:16px}
+textarea.t{min-height:64px;resize:vertical}
+label.l{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
+.badge{display:inline-block;font-size:12px;font-weight:600;border-radius:999px;padding:2px 8px;white-space:nowrap}
+.b-ok{background:var(--okbg);color:var(--ok)}.b-warn{background:var(--warnbg);color:var(--warn)}.b-bad{background:var(--badbg);color:var(--bad)}.b-blue{background:var(--bluebg);color:var(--blue)}.b-mut{background:#eeeae7;color:var(--mut)}
+.item{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid #f0ecea}
+.item:first-child{border-top:0}
+.item .nm{font-weight:500}
+.item .cd{font-size:12px;color:var(--mut);word-break:break-all}
+.chk{width:22px;height:22px;accent-color:var(--red);flex:none;margin-top:2px}
+.kh{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px}
+.kh b{font-size:15px}
+.x{background:none;border:0;color:var(--mut);font-size:20px;cursor:pointer;padding:0 4px}
+.seg{display:flex;border:1px solid #d6d1cd;border-radius:10px;overflow:hidden;margin-top:6px}
+.seg button{flex:1;border:0;background:#fff;padding:7px 4px;font-size:13px;cursor:pointer}
+.seg button.on{background:var(--red);color:#fff}
+.seg button.on.d{background:var(--warn)}
+.seg button.on.lo{background:var(--bad)}
+.tk{display:flex;justify-content:space-between;gap:10px;align-items:center;cursor:pointer}
+.tk .id{font-weight:600}
+.qr{display:flex;justify-content:center;padding:6px 0}
+.qr img,.qr svg{width:180px;height:180px;image-rendering:pixelated}
+.center{text-align:center}
+.empty{color:var(--mut);text-align:center;padding:18px 6px;font-size:14px}
+.toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;z-index:20;max-width:90%;text-align:center;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}.toast.err{background:var(--bad)}
+.spin{width:28px;height:28px;border:3px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:s 0.8s linear infinite;margin:40px auto}
+@keyframes s{to{transform:rotate(360deg)}}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px}
+.kv dt{color:var(--mut)}.kv dd{margin:0}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
+.stat b{display:block;font-size:20px}.stat span{font-size:12px;color:var(--mut)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.chip{border:1px solid #d6d1cd;background:#fff;border-radius:999px;padding:6px 12px;font-size:14px;cursor:pointer}
+.chip.on{background:var(--red);border-color:var(--red);color:#fff}
+.stepper{display:flex;align-items:center;gap:10px}
+.stepper button{width:36px;height:36px;border-radius:10px;border:1px solid #d6d1cd;background:#fff;font-size:20px;cursor:pointer}
+.warnbox{background:var(--warnbg);color:#6b3d05;border-radius:10px;padding:8px 10px;font-size:13px;margin-top:8px}
+.errbox{background:var(--badbg);color:#7d1a14;border-radius:10px;padding:8px 10px;font-size:13px;margin-top:8px}
+.okbox{background:var(--okbg);color:#14532d;border-radius:10px;padding:10px 12px;font-size:14px}
+a{color:var(--red)}
+body.wide .hdr,body.wide .ptitle,body.wide main{max-width:1100px}
+.opbtns{display:flex;flex-wrap:wrap;gap:6px}.nw{white-space:nowrap}
+button.stat{border:1px solid var(--line);cursor:pointer;font:inherit;width:100%}button.stat.on{outline:2px solid var(--red)}
+@media (min-width:720px){.filters.f6{grid-template-columns:2fr 1.3fr 1fr 1fr 1.2fr auto}.filters.f3{grid-template-columns:2fr 1fr 1.4fr}}
+.tabs{display:flex;gap:4px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:5px;margin:0 0 12px;overflow-x:auto}
+.tabs button{flex:1;min-width:max-content;border:0;background:none;border-radius:10px;padding:9px 12px;font-weight:600;font-size:14.5px;color:var(--mut);cursor:pointer}
+.tabs button.on{background:#FBECED;color:var(--red)}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 12px}
+body.wide .kpis{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.stat.bad b{color:var(--bad)}.stat.warn b{color:var(--warn)}
+.chart{display:flex;align-items:flex-end;gap:3px;height:150px;padding-top:16px;border-bottom:1px solid var(--line)}
+.chart .c{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center}
+.chart .bar2{width:100%;max-width:26px;background:var(--red);border-radius:3px 3px 0 0;min-height:1px}
+.chart .v{font-size:10.5px;color:var(--mut)}
+.cols{display:grid;grid-template-columns:1fr;gap:0 12px}
+@media (min-width:720px){.cols{grid-template-columns:1fr 1fr}}
+.filters{display:grid;grid-template-columns:1fr;gap:8px}
+@media (min-width:720px){.filters{grid-template-columns:2fr 1fr 1fr 1fr}}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th{text-align:left;font-size:12.5px;font-weight:600;color:var(--mut);padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap;background:#fafafa}
+.tbl td{padding:8px 10px;border-bottom:1px solid #f0ecea;vertical-align:top}
+.tbl td.n{color:var(--mut);width:24px}.tbl td.r{text-align:right;white-space:nowrap}
+.tbl .chk{margin:0}.wide-t td:nth-child(2){white-space:nowrap}
+tr.clk,.item.clk{cursor:pointer}tr.clk:hover td{background:#fcf6f6}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px}
+.t.sm{width:auto;padding:6px 8px;font-size:14px}
+.acts{white-space:nowrap}.acts .btn{margin:0 0 4px 4px}
+.strip{position:sticky;top:0;z-index:30;background:#1d1e1f;color:#fff;font-size:14px;padding:7px 12px;display:flex;align-items:center;justify-content:center;gap:10px}
+.strip .tag{background:#D9A21B;color:#1d1e1f;border-radius:5px;padding:0 7px;font-weight:700}
+.strip .who{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.strip button{border:1px solid #fff;background:none;color:#fff;border-radius:7px;padding:2px 10px;cursor:pointer;font:inherit;font-size:13px}
+body.acting .band{top:38px}body.acting .hdr{top:46px}
+.cam{position:fixed;inset:0;background:#000;z-index:50;display:flex;align-items:center;justify-content:center}
+.cam video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cam .frame{position:relative;width:min(68vw,300px);height:min(68vw,300px);border-radius:20px;box-shadow:0 0 0 9999px rgba(0,0,0,.45);border:3px solid #fff}
+.cam .ctop{position:absolute;top:calc(18px + env(safe-area-inset-top));left:0;right:0;text-align:center;color:#fff;font-weight:600;font-size:16px;padding:0 16px}
+.cam .cbot{position:absolute;left:0;right:0;bottom:calc(18px + env(safe-area-inset-bottom));display:flex;gap:10px;justify-content:center;padding:0 16px}
+.cam .cbot .btn{width:auto;flex:1;max-width:200px}
+</style>
+</head>
+<body><div style="background:#F4C430;color:#1d1e1f;text-align:center;font:600 13px/1.3 system-ui,sans-serif;padding:6px 10px">ระบบทดสอบ v1.2 (รวม Survey Inventory) · ฐานข้อมูลทดสอบ ไม่ใช่ข้อมูลจริง · TEST system, not live data</div>
+<div class="band"></div>
+<header class="hdr"><button class="back" id="back" hidden aria-label="Back">‹</button><span class="logo" aria-label="UNIQUE"><svg width="36" height="34" viewBox="0 0 48 46" aria-hidden="true"><path fill="#95191F" fill-rule="evenodd" clip-rule="evenodd" d="M2.98725 12.0055L10.2304 22.0216L23.2599 12.5862L20.5604 10.6209L23.3734 6.75285L18.8475 0.5L2.98725 12.0055ZM21.2197 10.5391L28.4751 0.53186L44.3441 12.0254L39.816 18.2766L35.2659 16.8075L34.2406 19.9864L21.2197 10.5391ZM47.3033 21.2105L35.5566 17.3753L30.5693 32.6748H33.9079V37.4585L41.2445 39.8503L47.3033 21.2105ZM33.4545 33.1284H17.3388L18.4104 36.3038L13.8766 37.7472V45.5H33.4545V33.1284ZM17.8295 36.0419L6.07944 39.8668L0 21.2337L7.33662 18.842L10.1533 22.7074L12.851 20.7396L17.8295 36.0419ZM18.5326 19.8887H21.6651V27.1054C21.6514 27.5453 22.036 28.4251 23.6847 28.4251C25.3334 28.4251 25.6631 27.5453 25.6219 27.1054V19.8887H28.7544V27.1054C28.7544 28.4251 27.7075 30.6107 23.6847 30.6107C19.4394 30.6107 18.5326 28.3426 18.5326 27.1054V19.8887Z"/></svg><svg width="96" height="22" viewBox="0 0 130 30" aria-hidden="true"><path fill="#000" fill-rule="evenodd" clip-rule="evenodd" d="M85.0914 9.00952C85.0914 1.95512 79.153 0.59375 74.3281 0.59375C69.6268 0.59375 63.5647 2.07889 63.5647 8.01943V18.9104C63.5647 24.9747 69.7505 26.3361 72.9672 26.4599C72.9672 28.5391 74.6167 29.0589 75.4415 29.0589H85.2152V26.0886H80.8851C79.7716 26.0886 79.5242 25.4698 79.5242 25.2223C79.5242 25.0242 79.7716 24.8922 79.8953 24.851C84.5966 24.1084 85.0914 20.8906 85.0914 18.4154V9.00952ZM74.3281 4.80161C73.2393 4.80161 72.9672 5.87421 72.9672 6.41051V20.6431C72.9672 21.2619 73.0909 22.4995 74.4518 22.4995C75.4415 22.4995 75.6889 21.2619 75.6889 20.6431V6.41051C75.6889 5.87421 75.4168 4.80161 74.3281 4.80161Z"/><path fill="#000" d="M0.963867 1.08892H10.3664V20.767C10.3664 21.5095 10.4901 22.4996 11.7272 22.4996C13.0881 22.4996 13.2119 21.5095 13.2119 20.767V1.08892H22.7381V19.5294C22.7381 22.1284 20.4369 26.8313 11.7272 26.8313C4.05679 26.8313 0.963867 23.4897 0.963867 19.5294V1.08892Z"/><path fill="#000" d="M26.3258 1.08892H34.6149L39.1924 12.475V1.08892H47.1103V26.46H39.6873L34.12 14.9502V26.46H26.3258V1.08892Z"/><path fill="#000" d="M60.1006 1.08892H50.8218V26.46H60.1006V1.08892Z"/><path fill="#000" d="M98.0817 1.08892H88.6792V19.5294C88.6792 23.4897 91.7721 26.8313 99.4426 26.8313C108.152 26.8313 110.453 22.8709 110.453 19.5294V1.08892H100.927V20.767C100.927 21.5095 100.803 22.4996 99.4426 22.4996C98.2054 22.4996 98.0817 21.5095 98.0817 20.767V1.08892Z"/><path fill="#000" d="M113.794 1.08892H129.258V6.16314H123.073V11.1136H128.887V15.9403H123.073V21.6333H130.001V26.46H113.794V1.08892Z"/></svg></span><span class="app">EQUIPMENT</span><button class="lang" id="lang">EN</button></header>
+<div class="ptitle"><h1 id="title"></h1><div class="hello" id="sub" hidden></div></div>
+<main id="app"><div class="spin"></div></main>
+<div class="bar" id="bar" hidden><div class="in" id="barIn"></div></div>
+<div class="toast" id="toast"></div>
+<script>
+/* EQUIPMENT Unique LIFF app v1.2.0 */
+const CFG = {
+  liffId: '2012756966-P652TGXb',
+  api: 'https://script.google.com/macros/s/AKfycbwfeklimRva92JGWYckp4SMU0HaXs_T3oyk4Sev-NM72oFgwpcPYyUSuaRRDqUqXzAQ/exec'
+};
+const S = { lang: 'th', me: null, idToken: '', accessToken: '', cart: [], stack: [], params: {}, scanOk: false };
+const $ = s => document.querySelector(s);
+const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const tr = (th, en) => S.lang === 'en' ? en : th;
+const app = $('#app');
+
+/* ---------- formatting ---------- */
+const TH_M = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+const EN_M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+function pd(s) { const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2}))?/); return m ? { y: +m[1], mo: +m[2], d: +m[3], h: m[4] || '', mi: m[5] || '' } : null; }
+function fdt(s, withTime = true) {
+  const p = pd(s); if (!p) return '';
+  const today = new Date(); const ty = today.getFullYear(), tm = today.getMonth() + 1, td = today.getDate();
+  let day;
+  if (p.y === ty && p.mo === tm && p.d === td) day = tr('วันนี้', 'Today');
+  else {
+    const tmr = new Date(today.getTime() + 86400000);
+    if (p.y === tmr.getFullYear() && p.mo === tmr.getMonth() + 1 && p.d === tmr.getDate()) day = tr('พรุ่งนี้', 'Tomorrow');
+    else day = S.lang === 'en' ? `${p.d} ${EN_M[p.mo - 1]}` : `${p.d} ${TH_M[p.mo - 1]}`;
+  }
+  return withTime && p.h ? `${day} ${p.h}:${p.mi}` : day;
+}
+function iso(d) { const z = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}:00`; }
+const STATUS = {
+  AVAILABLE: ['พร้อมให้เบิก', 'Available', 'b-ok'], ON_LOAN: ['ถูกเบิกอยู่', 'On loan', 'b-blue'], REPAIR: ['ซ่อม/ชำรุด', 'In repair', 'b-warn'],
+  LOST: ['สูญหาย', 'Lost', 'b-bad'], MISSING: ['กำลังตามหา', 'Missing', 'b-bad'], CHECK: ['รอตรวจรหัส', 'Needs check', 'b-mut'],
+  RESERVED: ['จองให้โครงการ (อยู่ HO)', 'Reserved (at HO)', 'b-blue'], AT_REPAIR: ['อยู่ร้านซ่อม', 'At repair shop', 'b-warn'], AT_CAL: ['ส่งสอบเทียบ', 'At calibration', 'b-warn'],
+  DISPOSAL_PENDING: ['รอตัดจำหน่าย', 'Disposal pending', 'b-mut'], RETIRED: ['ตัดจำหน่ายแล้ว', 'Disposed', 'b-mut'], ELSEWHERE: ['อยู่ที่อื่น', 'Elsewhere', 'b-mut']
+};
+const stBadge = s => { const x = STATUS[s] || [s, s, 'b-mut']; return `<span class="badge ${x[2]}">${esc(tr(x[0], x[1]))}</span>`; };
+const calBadge = (c, due) => c === 'OVERDUE' ? `<span class="badge b-bad">${tr('เลยกำหนดสอบเทียบ', 'Calibration overdue')}</span>` : c === 'SOON' ? `<span class="badge b-warn">${tr('ใกล้ครบสอบเทียบ', 'Calibration due')} ${esc(fdt(due, false))}</span>` : '';
+const TST = { OPEN: ['กำลังยืม', 'On loan', 'b-blue'], PARTIAL: ['คืนบางส่วน', 'Partly returned', 'b-warn'], CLOSED: ['คืนครบแล้ว', 'Returned', 'b-ok'] };
+const tBadge = t => t.overdue ? `<span class="badge b-bad">${tr('เลยกำหนดคืน', 'Overdue')}</span>` : (() => { const x = TST[t.status] || [t.status, t.status, 'b-mut']; return `<span class="badge ${x[2]}">${esc(tr(x[0], x[1]))}</span>`; })();
+const COND = { OK: ['ปกติ', 'OK'], DAMAGED: ['ชำรุด', 'Damaged'], LOST: ['สูญหาย', 'Lost'] };
+
+/* ---------- ui helpers ---------- */
+let toastT;
+function toast(msg, err) { const t = $('#toast'); t.textContent = msg; t.className = 'toast on' + (err ? ' err' : ''); clearTimeout(toastT); toastT = setTimeout(() => t.className = 'toast', err ? 4200 : 2400); }
+function setTop(title, canBack, sub) { $('#title').textContent = title; $('#sub').textContent = sub || ''; $('#sub').hidden = !sub; $('#back').hidden = !canBack; $('#lang').textContent = S.lang === 'en' ? 'TH' : 'EN'; }
+function bar(html) { const b = $('#bar'); if (!html) { b.hidden = true; $('#barIn').innerHTML = ''; return; } b.hidden = false; $('#barIn').innerHTML = html; }
+function loading() { app.innerHTML = '<div class="spin"></div>'; bar(''); }
+function go(view, arg, replace) { if (!replace && S.cur) S.stack.push(S.cur); S.cur = { view, arg }; render(); window.scrollTo(0, 0); }
+function back() { const p = S.stack.pop(); if (!p) { S.cur = { view: 'home' }; } else S.cur = p; render(); }
+$('#back').onclick = back;
+$('#lang').onclick = async () => { S.lang = S.lang === 'en' ? 'th' : 'en'; document.documentElement.lang = S.lang; try { localStorage.setItem('eq_lang', S.lang); } catch (e) {} render(); if (S.me && S.me.registered) api('setLang', { lang: S.lang }).catch(() => {}); };
+
+/* ---------- api ---------- */
+async function api(action, payload = {}, opts = {}) {
+  let res;
+  try {
+    const r = await fetch(CFG.api, { method: 'POST', body: JSON.stringify(Object.assign({ action, accessToken: S.accessToken, idToken: S.idToken }, S.asUser && action !== 'setLang' ? { asUser: S.asUser.id } : {}, payload)) });
+    res = await r.json();
+  } catch (e) {
+    const err = new Error(tr('เชื่อมต่อไม่สำเร็จ ตรวจสัญญาณอินเทอร์เน็ตแล้วลองใหม่', 'Connection failed. Check your internet and try again.'));
+    err.code = 'NET'; if (!opts.quiet) toast(err.message, true); throw err;
+  }
+  if (res.ok) return res.data;
+  const err = new Error(res.error || 'Error'); err.code = res.code;
+  if (res.code === 'AUTH_EXPIRED') { relogin(); throw err; }
+  if (S.asUser && (res.code === 'AS_INACTIVE' || res.code === 'AS_NOT_FOUND')) { toast(errText(err), true); stopActAs(); throw err; }
+  if (res.code === 'NOT_ACTIVE') { S.me = null; boot(); throw err; }
+  if (!opts.quiet && res.code !== 'UNAVAILABLE') toast(errText(err), true);
+  throw err;
+}
+const ERR_EN = {
+  'ระบบกำลังบันทึกรายการอื่นอยู่ กรุณาลองใหม่อีกครั้ง': 'The system is busy saving another record. Please try again.',
+  'กรุณากรอกรหัสพนักงาน': 'Please enter your employee ID', 'กรุณากรอกเบอร์โทร 10 หลัก': 'Please enter a 10-digit phone number',
+  'ใบเบิกนี้เป็นของผู้อื่น': 'This ticket belongs to someone else', 'บัญชีนี้ไม่มีสิทธิ์ทำรายการนี้': 'This account cannot do that',
+  'ใบเบิกนี้คืนครบแล้ว': 'This ticket is already fully returned', 'ยังไม่ได้เลือกอุปกรณ์': 'No equipment selected',
+  'ยังไม่ได้เลือกอุปกรณ์ที่จะคืน': 'No equipment selected to return', 'วันเวลาคืนต้องไม่อยู่ในอดีต': 'The return time cannot be in the past',
+  'กำหนดคืนต้องไม่เกิน 60 วัน': 'The return date must be within 60 days'
+};
+function errText(e) {
+  const m = String(e && e.message || '');
+  if (S.lang !== 'en') return m;
+  if (ERR_EN[m]) return ERR_EN[m];
+  if (/^ไม่พบรหัส (.+) ในทะเบียน/.test(m)) return 'Code ' + m.match(/^ไม่พบรหัส (.+) ในทะเบียน/)[1] + ' is not in the equipment register';
+  if (/^กรุณาระบุรายละเอียด/.test(m)) return 'Please describe the damaged or lost item ' + (m.match(/\((.+)\)/) || ['', ''])[1];
+  if (/กรอกไม่ตรงหลายครั้ง/.test(m)) return 'Too many attempts that did not match. Try again in 1 hour or contact the admin.';
+  if (/ลงทะเบียนกับ LINE อื่นแล้ว/.test(m)) return 'This employee ID is already registered to another LINE account. The admin has been told.';
+  return m;
+}
+
+/* ---------- boot ---------- */
+async function boot() {
+  loading();
+  try { S.lang = localStorage.getItem('eq_lang') || ''; } catch (e) { S.lang = ''; }
+  try {
+    await liff.init({ liffId: CFG.liffId });
+  } catch (e) {
+    app.innerHTML = `<div class="card"><h2>เปิดระบบไม่สำเร็จ / Could not start</h2><p class="hint">${esc(e.message)}</p></div>`; return;
+  }
+  if (!S.lang) S.lang = /^th/i.test(liff.getLanguage() || 'th') ? 'th' : 'en';
+  document.documentElement.lang = S.lang;
+  S.accessToken = liff.isLoggedIn() ? (liff.getAccessToken() || '') : '';
+  S.idToken = liff.isLoggedIn() ? (liff.getIDToken() || '') : '';
+  if (!S.accessToken) { relogin(); return; }
+  S.scanOk = liff.isInClient() && liff.isApiAvailable && liff.isApiAvailable('scanCodeV2');
+  const q = new URLSearchParams(location.search);
+  S.params = { v: q.get('v') || '', c: q.get('c') || '', t: q.get('t') || '' };
+  try { S.me = await api('me', {}, { quiet: true }); try { sessionStorage.removeItem('eq_relogin'); } catch (x) {} } catch (e) {
+    if (e.code === 'AUTH_EXPIRED') return;
+    setTop('EQUIPMENT Unique');
+    app.innerHTML = `<div class="card"><h2>${tr('เปิดระบบไม่สำเร็จ', 'Could not open')}</h2><p class="hint">${esc(errText(e))}</p><button class="btn" onclick="location.reload()">${tr('ลองใหม่', 'Try again')}</button></div>`; return;
+  }
+  if (S.me.user && S.me.user.lang && !localStorage.getItem('eq_lang')) S.lang = S.me.user.lang;
+  if (!S.me.registered || S.me.user.status === 'REJECTED') return go('register', null, true);
+  if (S.me.user.status !== 'ACTIVE') return go('pending', null, true);
+  S.stack = []; S.cur = { view: 'home' };
+  try { sessionStorage.removeItem('eq_as'); } catch (e) {}
+  restoreCart();
+  const p = S.params;
+  if (p.t) return go('ticket', p.t);
+  if (p.c) return scanned(p.c);
+  if (p.v === 'borrow') return go('borrow');
+  if (p.v === 'return') return startReturn();
+  if (p.v === 'mine') return go('mine');
+  if (p.v === 'admin' && canRead()) return go('admin');
+  render();
+}
+/* sign in again with LINE (token missing or expired). In the LINE app the token is renewed on open,
+   so a reload is enough; in a normal browser we log out and log in. Guarded against loops. */
+function relogin() {
+  let n = 0; try { n = +(sessionStorage.getItem('eq_relogin') || 0); } catch (e) {}
+  if (Date.now() - n < 60000) {
+    setTop('EQUIPMENT Unique');
+    app.innerHTML = `<div class="card"><h2>${tr('เข้าสู่ระบบ LINE ไม่สำเร็จ', 'LINE sign-in failed')}</h2><p class="hint">${tr('ปิดหน้านี้แล้วเปิดใหม่จากเมนูในแชท EQUIPMENT Unique', 'Close this page and open it again from the EQUIPMENT Unique chat menu')}</p><button class="btn" onclick="sessionStorage.removeItem('eq_relogin');location.reload()">${tr('ลองใหม่', 'Try again')}</button></div>`;
+    return;
+  }
+  try { sessionStorage.setItem('eq_relogin', String(Date.now())); } catch (e) {}
+  if (liff.isInClient()) { location.reload(); return; }
+  try { if (liff.isLoggedIn()) liff.logout(); } catch (e) {}
+  liff.login({ redirectUri: location.href });
+}
+const IC = {
+  scan: '<path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/>',
+  ret: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
+  rep: '<path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5M3 21v-5h5"/>',
+  chart: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  ticket: '<path d="M4 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4z"/><path d="M14 5v14"/>'
+};
+const scanIco = '<svg viewBox="0 0 24 24" style="width:20px;height:20px;vertical-align:-4px;margin-right:6px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" aria-hidden="true"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg>';
+const ico = n => `<span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true">${IC[n]}</svg></span>`;
+const capsOf = () => (S.me && S.me.caps) || (S.me && S.me.user ? { read: ['ADMIN', 'CHECKER'].includes(S.me.user.role), staff: ['ADMIN', 'CHECKER'].includes(S.me.user.role), store: S.me.user.role === 'ADMIN', admin: S.me.user.role === 'ADMIN' } : {});
+const isStaff = () => !!capsOf().staff;
+const canRead = () => !!capsOf().read;
+const ROLE_TH = { ADMIN: ['ผู้ดูแลระบบ', 'Admin'], STORE: ['ผู้ดูแลคลัง', 'Store keeper'], CHECKER: ['ผู้ตรวจรับ', 'Checker'], VIEWER: ['ผู้ดูข้อมูล', 'Viewer'], USER: ['ผู้ใช้', 'User'] };
+
+const WIDE = { admin: 1, assetAdmin: 1, assetEdit: 1, empEdit: 1 };
+function render() {
+  const v = S.cur ? S.cur.view : 'home';
+  document.body.classList.toggle('wide', !!WIDE[v]);
+  const f = VIEWS[v] || VIEWS.home;
+  bar('');
+  f(S.cur && S.cur.arg);
+}
+
+/* ---------- register ---------- */
+const VIEWS = {};
+VIEWS.register = (st) => {
+  setTop(tr('ลงทะเบียน', 'Register'));
+  st = st || {};
+  app.innerHTML = `
+  <div class="card"><h2>${tr('ยืนยันตัวตนครั้งแรก', 'First-time sign up')}</h2>
+  <p class="hint">${tr('กรอกรหัสพนักงานและเบอร์โทรที่ให้ไว้กับฝ่ายบุคคล ถ้าตรงกับทะเบียน ใช้งานได้ทันที', 'Enter your employee ID and the phone number HR has on file. If they match, you can start right away.')}</p>
+  <label class="l">${tr('รหัสพนักงาน', 'Employee ID')}</label><input class="t" id="emp" inputmode="numeric" autocomplete="off" value="${esc(st.empId || '')}">
+  <label class="l">${tr('เบอร์โทรศัพท์', 'Phone number')}</label><input class="t" id="ph" inputmode="tel" autocomplete="tel" placeholder="08x-xxx-xxxx" value="${esc(st.phone || '')}">
+  ${st.miss ? `<div class="errbox">${st.found ? tr('รหัสนี้อยู่ในทะเบียน แต่เบอร์ไม่ตรงหรือทะเบียนยังไม่มีเบอร์ของคุณ', 'Your ID is in the register, but the phone does not match or is missing.') : tr('ไม่พบข้อมูลที่ตรงกับทะเบียน', 'No matching record in the register.')}<br>${tr('ส่งให้ผู้ดูแลตรวจและอนุมัติได้ด้านล่าง', 'You can send it to an admin for approval below.')}</div>
+   ${st.found ? '' : `<label class="l">${tr('ชื่อ-นามสกุล', 'Full name')}</label><input class="t" id="nm" value="${esc(st.name || '')}">`}` : ''}
+  </div>
+  ${S.me && S.me.user && S.me.user.status === 'REJECTED' ? `<div class="errbox">${tr('คำขอครั้งก่อนไม่ได้รับอนุมัติ กรุณาติดต่อผู้ดูแล', 'Your previous request was not approved. Please contact the admin.')}</div>` : ''}`;
+  bar(st.miss ? `<button class="btn sec" id="rv">${tr('ส่งให้ผู้ดูแลตรวจ', 'Send for approval')}</button><button class="btn" id="go">${tr('ลองอีกครั้ง', 'Try again')}</button>` : `<button class="btn" id="go">${tr('ยืนยัน', 'Confirm')}</button>`);
+  const val = () => ({ empId: $('#emp').value.trim(), phone: $('#ph').value.trim(), name: $('#nm') ? $('#nm').value.trim() : '', lang: S.lang });
+  $('#go').onclick = async (e) => {
+    const v = val(); e.target.disabled = true;
+    try {
+      const r = await api('register', v);
+      if (r.matched) { S.me = r.me; toast(tr('ลงทะเบียนสำเร็จ', 'You are registered')); S.stack = []; S.cur = { view: 'home' }; return boot(); }
+      VIEWS.register(Object.assign(v, { miss: true, found: r.found }));
+    } catch (err) { e.target.disabled = false; }
+  };
+  if ($('#rv')) $('#rv').onclick = async (e) => {
+    const v = val(); e.target.disabled = true;
+    try { S.me = await api('requestReview', v); go('pending', null, true); } catch (err) { e.target.disabled = false; }
+  };
+};
+VIEWS.pending = () => {
+  setTop(tr('ลงทะเบียน', 'Register'));
+  const u = S.me && S.me.user || {};
+  app.innerHTML = `<div class="card center"><div style="font-size:40px">⏳</div><h2>${tr('รอผู้ดูแลอนุมัติ', 'Waiting for approval')}</h2>
+  <p class="hint">${esc(u.name || '')} ${u.empId ? '(' + esc(u.empId) + ')' : ''}<br>${tr('ระบบแจ้งผู้ดูแลแล้ว เมื่ออนุมัติจะมีข้อความแจ้งใน LINE', 'The admin has been told. You will get a LINE message when it is approved.')}</p>
+  <button class="btn ghost" onclick="location.reload()">${tr('ตรวจสถานะอีกครั้ง', 'Check again')}</button></div>`;
+};
+
+/* ---------- home ---------- */
+VIEWS.home = () => {
+  const m = S.me, u = m.user;
+  const nm = S.lang === 'en' && u.nameEn ? u.nameEn : (u.nickname ? u.nickname : u.name);
+  setTop(tr('สวัสดี คุณ', 'Hello, ') + nm, false, tr('ระบบเบิก-คืนอุปกรณ์ Survey', 'Survey equipment borrow & return') + (canRead() && ROLE_TH[u.role] ? ' · ' + tr(ROLE_TH[u.role][0], ROLE_TH[u.role][1]) : ''));
+  const open = m.openTickets || [];
+  const cartN = selCodes().length;
+  app.innerHTML = `
+  <div class="card"><div class="kh"><h2 style="margin:0">${tr('อุปกรณ์ที่ยืมอยู่', 'On loan to you')}</h2>${open.length ? `<button class="btn small ghost" id="tMine">${tr('ทั้งหมด', 'All')}</button>` : ''}</div>
+  ${open.length ? open.map(tCard).join('') : `<div class="empty">${tr('ยังไม่มีอุปกรณ์ที่ยืมอยู่', 'Nothing on loan right now')}</div>`}</div>
+  <div class="big">
+    <button class="tile main" id="tBorrow">${ico('scan')}<b>${tr('เบิกอุปกรณ์', 'Borrow')}</b><span class="s">${cartN ? tr(`ในตะกร้า ${cartN} ชิ้น`, `${cartN} in cart`) : tr('สแกน QR', 'Scan QR')}</span></button>
+    <button class="tile" id="tReturn">${ico('ret')}<b>${tr('คืนอุปกรณ์', 'Return')}</b><span class="s">${open.length ? tr(`ค้าง ${open.length} ใบ`, `${open.length} open`) : tr('ไม่มีค้าง', 'None open')}</span></button>
+    <button class="tile" id="tRepeat">${ico('rep')}<b>${tr('เบิกเหมือนเดิม', 'Same as last')}</b><span class="s">${tr('รายการล่าสุด', 'Last list')}</span></button>
+  </div>
+  ${canRead() ? `<div class="big" style="grid-template-columns:${isStaff() ? '1fr 1fr' : '1fr'}">
+    <button class="tile" id="tAdmin">${ico('chart')}<b>${tr('หลังบ้าน', 'Back office')}</b><span class="s">${tr('ค้างคืน', 'Overdue')} ${m.overdue || 0} · ${tr('รออนุมัติ', 'Pending')} ${m.pendingUsers || 0} · ${tr('แจ้งปัญหา', 'Issues')} ${m.openIssues || 0}</span></button>
+    ${isStaff() ? `<button class="tile" id="tScanT">${ico('ticket')}<b>${tr('สแกนใบเบิก', 'Scan ticket')}</b><span class="s">${tr('ตรวจส่งมอบ / รับคืน', 'Hand-over / receive')}</span></button>` : ''}
+  </div>` : ''}`;
+  $('#tBorrow').onclick = () => go('borrow');
+  $('#tReturn').onclick = startReturn;
+  $('#tRepeat').onclick = repeatLast;
+  if ($('#tMine')) $('#tMine').onclick = () => go('mine');
+  if ($('#tAdmin')) $('#tAdmin').onclick = () => go('admin');
+  if ($('#tScanT')) $('#tScanT').onclick = staffScan;
+  bindTk();
+};
+function tCard(t) {
+  return `<div class="tk item" data-t="${esc(t.ticketId)}"><div class="grow"><div class="id">${esc(t.ticketId)} ${tBadge(t)}</div>
+  <div class="hint">${t.items - t.returned}/${t.items} ${tr('ชิ้นยังไม่คืน', 'not returned')} · ${tr('คืน', 'due')} ${esc(fdt(t.dueAt))}${t.name && canRead() ? ' · ' + esc(t.name) : ''}</div></div><span>›</span></div>`;
+}
+function bindTk() { document.querySelectorAll('[data-t]').forEach(el => el.onclick = () => go('ticket', el.dataset.t)); }
+
+/* ---------- scanning ---------- */
+/* Scan a QR: LINE's own scanner inside the LINE app; elsewhere (Chrome, Safari, LINE in-app browser
+   without scanCodeV2) the phone/computer camera inside the page; typing the code is the last fallback. */
+async function scanOnce() {
+  if (S.scanOk) {
+    try { const r = await liff.scanCodeV2(); return r && r.value ? r.value : ''; }
+    catch (e) { /* fall through to the in-page camera */ }
+  }
+  const v = await camScan();
+  if (v !== null) return v;
+  return typeCode();
+}
+function typeCode() {
+  const v = prompt(tr('พิมพ์รหัสอุปกรณ์ หรือเลขใบเบิก', 'Type the equipment code or ticket number'));
+  return v || '';
+}
+let jsqrP = null;
+function loadJsQR() {
+  if (window.jsQR) return Promise.resolve();
+  if (!jsqrP) jsqrP = new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js'; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+  return jsqrP;
+}
+/* resolves with the text read, '' if the person closed it, or null if no camera can be used */
+function camScan() {
+  return new Promise(async (resolve) => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return resolve(null);
+    const ov = document.createElement('div');
+    ov.className = 'cam';
+    ov.innerHTML = `<video playsinline muted autoplay></video><div class="frame"></div>
+      <div class="ctop">${tr('เล็ง QR ให้อยู่ในกรอบ', 'Point the camera at the QR code')}</div>
+      <div class="cbot"><button class="btn ghost" data-k="type">${tr('พิมพ์รหัสแทน', 'Type the code')}</button><button class="btn sec" data-k="close">${tr('ปิด', 'Close')}</button></div>`;
+    document.body.appendChild(ov);
+    const video = ov.querySelector('video');
+    let stream = null, done = false, timer = null;
+    const finish = (val) => {
+      if (done) return; done = true; clearTimeout(timer);
+      if (stream) stream.getTracks().forEach(tk => tk.stop());
+      ov.remove(); resolve(val);
+    };
+    ov.querySelector('[data-k=close]').onclick = () => finish('');
+    ov.querySelector('[data-k=type]').onclick = () => { if (stream) stream.getTracks().forEach(tk => tk.stop()); finish(typeCode()); };
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+    } catch (e) {
+      ov.remove();
+      toast(tr('เปิดกล้องไม่ได้ (ยังไม่อนุญาตกล้อง หรือเครื่องไม่มีกล้อง) พิมพ์รหัสแทนได้', 'Could not open the camera (no permission or no camera). You can type the code.'), true);
+      return resolve(null);
+    }
+    if (done) { stream.getTracks().forEach(tk => tk.stop()); return; }
+    video.srcObject = stream;
+    try { await video.play(); } catch (e) {}
+    let detector = null;
+    try { if ('BarcodeDetector' in window && (await BarcodeDetector.getSupportedFormats()).includes('qr_code')) detector = new BarcodeDetector({ formats: ['qr_code'] }); } catch (e) {}
+    if (!detector) { try { await loadJsQR(); } catch (e) { finish(null); return; } }
+    const cv = document.createElement('canvas'), cx = cv.getContext('2d', { willReadFrequently: true });
+    const tick = async () => {
+      if (done) return;
+      try {
+        if (video.readyState >= 2 && video.videoWidth) {
+          let text = '';
+          if (detector) {
+            const r = await detector.detect(video); if (r && r.length) text = r[0].rawValue;
+          } else {
+            const w = 640, h = Math.round(640 * video.videoHeight / video.videoWidth);
+            cv.width = w; cv.height = h; cx.drawImage(video, 0, 0, w, h);
+            const img = cx.getImageData(0, 0, w, h);
+            const r = window.jsQR(img.data, w, h, { inversionAttempts: 'dontInvert' }); if (r && r.data) text = r.data;
+          }
+          if (text) { try { navigator.vibrate && navigator.vibrate(60); } catch (e) {} return finish(text); }
+        }
+      } catch (e) {}
+      timer = setTimeout(tick, 120);
+    };
+    tick();
+  });
+}
+async function staffScan() { const v = await scanOnce(); if (v) scanned(v, 'staff'); }
+async function scanned(raw, mode) {
+  loading();
+  let r;
+  try { r = await api('lookup', { code: raw }); } catch (e) { if (S.cur && S.cur.view !== 'home' && S.cur.view !== 'borrow') return render(); S.cur = S.cur || { view: 'home' }; return render(); }
+  if (r.type === 'ticket') return go('ticket', r.ticketId);
+  const items = r.type === 'item' ? [r.item] : r.items;
+  const mineOnLoan = items.find(i => i.mine && i.status === 'ON_LOAN');
+  if (mode !== 'borrow' && mineOnLoan) return go('ticket', mineOnLoan.ticketId);
+  if (mode === 'staff' || (items.length && items.every(i => !i.ok) && mode !== 'borrow')) return go('asset', r);
+  addToCart(r);
+  if (!S.cur || S.cur.view !== 'borrow') go('borrow'); else render();
+}
+
+/* ---------- cart ---------- */
+function saveCart() { try { sessionStorage.setItem('eq_cart', JSON.stringify(S.cart)); } catch (e) {} }
+function restoreCart() { try { S.cart = JSON.parse(sessionStorage.getItem('eq_cart') || '[]'); } catch (e) { S.cart = []; } }
+function addToCart(r) {
+  const key = r.type === 'kit' ? r.kit : r.type === 'group' ? r.group : r.item.code;
+  if (S.cart.find(g => g.key === key)) { toast(tr('อยู่ในตะกร้าแล้ว', 'Already in the cart')); return; }
+  const inCart = new Set(S.cart.flatMap(g => g.items.map(i => i.code)));
+  if (r.type === 'kit') {
+    S.cart.push({ key, type: 'kit', name: r.name, items: r.items.filter(i => !inCart.has(i.code)).map(i => Object.assign(i, { sel: i.ok })) });
+  } else if (r.type === 'group') {
+    const avail = r.items.filter(i => i.ok && !inCart.has(i.code));
+    S.cart.push({ key, type: 'group', name: r.name, items: avail.map((i, n) => Object.assign(i, { sel: n === 0 })), total: r.items.length });
+  } else {
+    if (inCart.has(r.item.code)) { toast(tr('อยู่ในตะกร้าแล้ว', 'Already in the cart')); return; }
+    S.cart.push({ key, type: 'item', name: r.item.name, items: [Object.assign(r.item, { sel: r.item.ok })] });
+  }
+  saveCart();
+  const g = S.cart[S.cart.length - 1];
+  const n = g.items.filter(i => i.sel).length;
+  toast(tr(`เพิ่ม ${g.name} (${n} ชิ้น)`, `Added ${g.name} (${n})`));
+}
+const selCodes = () => S.cart.flatMap(g => g.items.filter(i => i.sel && i.ok).map(i => i.code));
+
+VIEWS.borrow = () => {
+  setTop(tr('เบิกอุปกรณ์', 'Borrow'), true);
+  const n = selCodes().length;
+  app.innerHTML = `
+  <div class="card"><div class="row"><button class="btn" id="scan">${scanIco}${tr('สแกน QR', 'Scan QR')}</button></div>
+  <div class="row" style="margin-top:8px"><input class="t grow" id="code" placeholder="${tr('หรือพิมพ์รหัส เช่น UN-SV-GN-001-RC-001', 'or type a code, e.g. UN-SV-GN-001-RC-001')}" autocapitalize="characters"><button class="btn small ghost" id="add">${tr('เพิ่ม', 'Add')}</button></div>
+</div>
+  ${S.cart.length ? S.cart.map(cartGroup).join('') : `<div class="card empty">${tr('ยังไม่มีอุปกรณ์ในตะกร้า สแกน QR บนกล่องเพื่อดึงทั้งชุด หรือสแกนทีละชิ้น', 'The cart is empty. Scan the case QR for a whole set, or scan items one by one.')}</div>`}`;
+  bar(`<button class="btn ghost" id="clr" ${S.cart.length ? '' : 'disabled'}>${tr('ล้าง', 'Clear')}</button><button class="btn" id="next" ${n ? '' : 'disabled'} style="flex:2">${tr('ถัดไป', 'Next')} (${n})</button>`);
+  $('#scan').onclick = async () => { const v = await scanOnce(); if (v) scanned(v, 'borrow'); };
+  $('#add').onclick = () => { const v = $('#code').value.trim(); if (v) scanned(v, 'borrow'); };
+  $('#code').onkeydown = e => { if (e.key === 'Enter') $('#add').click(); };
+  $('#clr').onclick = () => { if (confirm(tr('ล้างตะกร้าทั้งหมด?', 'Clear the whole cart?'))) { S.cart = []; saveCart(); render(); } };
+  $('#next').onclick = () => go('details');
+  bindCart();
+};
+function itemLine(i, gi, ii, withChk = true) {
+  const why = !i.ok ? (i.elsewhere && i.status === 'AVAILABLE' ? `<span class="badge b-mut">${tr('อยู่ที่ ', 'At ')}${esc(i.location)}</span>` : i.status !== 'AVAILABLE' ? stBadge(i.status) + (i.holderName ? ` <span class="hint">${esc(i.holderName)}</span>` : '') : `<span class="badge b-bad">${tr('เลยกำหนดสอบเทียบ', 'Calibration overdue')}</span>`) : calBadge(i.cal, i.calDue);
+  return `<div class="item">${withChk ? `<input type="checkbox" class="chk" data-g="${gi}" data-i="${ii}" ${i.sel && i.ok ? 'checked' : ''} ${i.ok ? '' : 'disabled'}>` : ''}
+  <div class="grow"><div class="nm">${esc(i.name)} ${why}</div><div class="cd">${esc(i.code)}${i.model ? ' · ' + esc(i.brand ? i.brand + ' ' : '') + esc(i.model) : ''}</div></div></div>`;
+}
+function cartGroup(g, gi) {
+  if (g.type === 'group') {
+    const n = g.items.filter(i => i.sel).length;
+    return `<div class="card"><div class="kh"><b>${esc(g.name)}</b><button class="x" data-rm="${gi}" aria-label="remove">×</button></div>
+    <div class="row"><div class="grow hint">${tr('พร้อมให้เบิก', 'Available')} ${g.items.length}/${g.total}</div>
+    <div class="stepper"><button data-dec="${gi}">−</button><b>${n}</b><button data-inc="${gi}">+</button></div></div>
+    <div class="hint" style="margin-top:6px">${g.items.filter(i => i.sel).map(i => esc(i.code)).join(', ')}</div></div>`;
+  }
+  const sel = g.items.filter(i => i.sel && i.ok).length, cal = g.items.some(i => i.cal === 'OVERDUE' || i.cal === 'SOON');
+  return `<div class="card"><div class="kh"><b>${g.type === 'kit' ? '🧰 ' : ''}${esc(g.name)}</b><button class="x" data-rm="${gi}" aria-label="remove">×</button></div>
+  ${g.type === 'kit' ? `<div class="hint">${tr(`ติ๊กเฉพาะชิ้นที่หยิบจริง (${sel}/${g.items.length})`, `Tick only what you take (${sel}/${g.items.length})`)}</div>` : ''}
+  ${g.items.map((i, ii) => itemLine(i, gi, ii)).join('')}
+  ${cal ? `<div class="warnbox">${tr('มีเครื่องที่ใกล้หรือเลยกำหนดสอบเทียบตามข้อมูลในระบบ ตรวจสอบก่อนใช้งานวัดจริง', 'Some instruments are near or past their calibration date in the register. Check before survey use.')}</div>` : ''}</div>`;
+}
+function bindCart() {
+  document.querySelectorAll('.chk[data-g]').forEach(c => c.onchange = () => { S.cart[c.dataset.g].items[c.dataset.i].sel = c.checked; saveCart(); render(); });
+  document.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { S.cart.splice(+b.dataset.rm, 1); saveCart(); render(); });
+  document.querySelectorAll('[data-inc]').forEach(b => b.onclick = () => { const g = S.cart[b.dataset.inc]; const x = g.items.find(i => !i.sel); if (x) x.sel = true; saveCart(); render(); });
+  document.querySelectorAll('[data-dec]').forEach(b => b.onclick = () => { const g = S.cart[b.dataset.dec]; const x = [...g.items].reverse().find(i => i.sel); if (x) x.sel = false; saveCart(); render(); });
+}
+
+/* ---------- borrow details ---------- */
+VIEWS.details = () => {
+  setTop(tr('รายละเอียดการเบิก', 'Borrow details'), true);
+  const codes = selCodes();
+  if (!codes.length) return go('borrow', null, true);
+  const rt = (S.me.settings && S.me.settings.returnTime) || '17:30';
+  const [hh, mm] = rt.split(':').map(Number);
+  const now = new Date(); const today = new Date(now); today.setHours(hh, mm || 0, 0, 0);
+  const tomorrow = new Date(today.getTime() + 86400000);
+  const opts = [];
+  if (today > now) opts.push(['today', tr('วันนี้ ', 'Today ') + rt, today]);
+  opts.push(['tmr', tr('พรุ่งนี้ ', 'Tomorrow ') + rt, tomorrow]);
+  opts.push(['custom', tr('เลือกวันเวลาเอง', 'Pick a date and time'), null]);
+  S.due = S.due && opts.find(o => o[0] === S.due) ? S.due : opts[0][0];
+  let site = ''; try { site = localStorage.getItem('eq_site') || ''; } catch (e) {}
+  app.innerHTML = `
+  <div class="card"><h2>${tr('กำหนดคืน', 'Return by')}</h2><div class="chips">${opts.map(o => `<button class="chip ${S.due === o[0] ? 'on' : ''}" data-due="${o[0]}">${esc(o[1])}</button>`).join('')}</div>
+  <div id="cw" ${S.due === 'custom' ? '' : 'hidden'}><label class="l">${tr('วันและเวลาคืน', 'Return date and time')}</label><input class="t" type="datetime-local" id="dt" value="${iso(tomorrow).slice(0, 16)}"></div></div>
+  <div class="card"><label class="l" style="margin-top:0">${tr('หน้างาน / ที่ใช้งาน (ไม่บังคับ)', 'Site / where it will be used (optional)')}</label><input class="t" id="site" value="${esc(site)}" placeholder="${tr('เช่น สถานีมุกดาหาร กม. 352', 'e.g. Mukdahan station km 352')}">
+  <label class="l">${tr('งานที่ใช้ (ไม่บังคับ)', 'Purpose (optional)')}</label><input class="t" id="pur" placeholder="${tr('เช่น วางหมุด, Drone survey', 'e.g. setting control points')}"></div>
+  <div class="card"><h2>${tr('สรุป', 'Summary')} · ${codes.length} ${tr('ชิ้น', 'items')}</h2>
+  ${S.cart.map(g => { const s = g.items.filter(i => i.sel && i.ok); return s.length ? `<div class="item"><div class="grow"><div class="nm">${esc(g.name)}</div><div class="cd">${s.length} ${tr('ชิ้น', 'item(s)')}${g.type === 'kit' && s.length < g.items.length ? ' · ' + tr('ไม่ครบชุด', 'partial set') : ''}</div></div></div>` : ''; }).join('')}</div>`;
+  bar(`<button class="btn" id="ok">${tr('ยืนยันการเบิก', 'Confirm borrow')}</button>`);
+  document.querySelectorAll('[data-due]').forEach(b => b.onclick = () => { S.due = b.dataset.due; document.querySelectorAll('[data-due]').forEach(x => x.classList.toggle('on', x === b)); $('#cw').hidden = S.due !== 'custom'; });
+  $('#ok').onclick = async (e) => {
+    const opt = opts.find(o => o[0] === S.due);
+    let due = opt[2];
+    if (S.due === 'custom') { const v = $('#dt').value; if (!v) return toast(tr('เลือกวันเวลาคืน', 'Pick a return time'), true); due = new Date(v); }
+    const siteV = $('#site').value.trim(); try { localStorage.setItem('eq_site', siteV); } catch (x) {}
+    e.target.disabled = true; e.target.textContent = tr('กำลังบันทึก…', 'Saving…');
+    try {
+      const t = await api('borrow', { codes, dueAt: iso(due), site: siteV, purpose: $('#pur').value.trim() });
+      S.cart = []; saveCart(); S.due = null;
+      S.me.openTickets = (S.me.openTickets || []).concat([t]);
+      S.stack = [{ view: 'home' }]; S.cur = { view: 'ticket', arg: t.ticketId, data: t, fresh: true }; render();
+    } catch (err) {
+      e.target.disabled = false; e.target.textContent = tr('ยืนยันการเบิก', 'Confirm borrow');
+      if (err.code === 'UNAVAILABLE') {
+        let info = {}; try { info = JSON.parse(err.message); } catch (x) {}
+        const bad = new Set((info.bad || []).map(b => b.code));
+        S.cart.forEach(g => g.items.forEach(i => { if (bad.has(i.code.toUpperCase())) { i.ok = false; i.sel = false; i.status = (info.bad.find(b => b.code === i.code.toUpperCase()) || {}).why || 'ON_LOAN'; } }));
+        saveCart();
+        toast(tr(`มี ${bad.size} ชิ้นที่เพิ่งถูกเบิกไปหรือเบิกไม่ได้ ระบบเอาออกจากตะกร้าแล้ว`, `${bad.size} item(s) are no longer available and were unticked`), true);
+        go('borrow', null, true);
+      }
+    }
+  };
+};
+
+/* ---------- ticket ---------- */
+VIEWS.ticket = async (id) => {
+  setTop(id, true);
+  let t = S.cur.data;
+  if (!t || t.ticketId !== id) {
+    loading(); setTop(id, true);
+    try { t = await api('ticket', { ticketId: id }); } catch (e) { return back(); }
+    S.cur.data = t;
+  }
+  const out = t.items_.filter(i => !i.returnedAt);
+  const groups = {};
+  t.items_.forEach(i => { const k = i.kit || '_'; (groups[k] = groups[k] || []).push(i); });
+  const qr = qrSvg(`https://liff.line.me/${CFG.liffId}?t=${t.ticketId}`);
+  const needRecv = t.items_.some(i => i.returnedAt && !i.receivedBy);
+  app.innerHTML = `
+  ${S.cur.fresh ? `<div class="okbox" style="margin-bottom:12px">✅ ${tr('บันทึกการเบิกแล้ว แสดง QR นี้ให้ผู้ตรวจรับสแกนเมื่อรับของ', 'Saved. Show this QR to the checker when you pick up.')}</div>` : ''}
+  <div class="card center"><div class="qr">${qr}</div><div style="font-weight:700;font-size:20px;letter-spacing:.5px">${esc(t.ticketId)}</div><div style="margin-top:4px">${tBadge(t)}</div></div>
+  <div class="card"><dl class="kv">
+    <dt>${tr('ผู้เบิก', 'Borrower')}</dt><dd>${esc(t.name)}</dd>
+    <dt>${tr('เบิกเมื่อ', 'Borrowed')}</dt><dd>${esc(fdt(t.createdAt))}</dd>
+    <dt>${tr('กำหนดคืน', 'Due')}</dt><dd>${esc(fdt(t.dueAt))}${t.overdue ? ' <span class="badge b-bad">' + tr('เลยกำหนด', 'Overdue') + '</span>' : ''}${isStaff() && t.status !== 'CLOSED' ? ` <button class="btn small ghost" id="edDue" style="padding:2px 8px">${tr('แก้', 'Change')}</button><div id="dueBox" hidden class="row" style="margin-top:6px"><input class="t" type="datetime-local" id="dueIn" value="${esc(String(t.dueAt).slice(0, 16))}"><button class="btn small" id="dueSave">${tr('บันทึก', 'Save')}</button></div>` : ''}</dd>
+    ${t.site ? `<dt>${tr('หน้างาน', 'Site')}</dt><dd>${esc(t.site)}</dd>` : ''}${t.purpose ? `<dt>${tr('งาน', 'Purpose')}</dt><dd>${esc(t.purpose)}</dd>` : ''}
+    <dt>${tr('ส่งมอบ', 'Hand-over')}</dt><dd>${t.outBy ? esc(t.outBy) + ' · ' + esc(fdt(t.outAt)) : `<span class="hint">${tr('ยังไม่มีผู้ตรวจยืนยัน', 'Not yet confirmed by a checker')}</span>`}</dd>
+    ${t.closedAt ? `<dt>${tr('คืนครบ', 'Returned')}</dt><dd>${esc(fdt(t.closedAt))}</dd>` : ''}
+  </dl></div>
+  <div class="card"><h2>${tr('อุปกรณ์', 'Items')} · ${t.items_.length - out.length}/${t.items_.length} ${tr('คืนแล้ว', 'returned')}</h2>
+  ${Object.keys(groups).map(k => `${k !== '_' ? `<div class="hint" style="margin-top:6px;font-weight:600">🧰 ${esc((t.kits || {})[k] || k)}</div>` : ''}${groups[k].map(i => `<div class="item"><div class="grow"><div class="nm">${esc(i.name)} ${i.returnedAt ? `<span class="badge ${i.cond === 'OK' ? 'b-ok' : i.cond === 'DAMAGED' ? 'b-warn' : 'b-bad'}">${esc(tr(COND[i.cond][0], COND[i.cond][1]))}</span>` : calBadge(i.cal, i.calDue)}</div><div class="cd">${esc(i.code)}${i.note ? ' · ' + esc(i.note) : ''}${i.receivedBy ? ' · ' + tr('รับคืนโดย ', 'received by ') + esc(i.receivedBy) : ''}</div></div></div>`).join('')}`).join('')}</div>`;
+  const btns = [];
+  if (isStaff() && !t.outBy && out.length) btns.push(`<button class="btn sec" id="co">${tr('ยืนยันส่งมอบ', 'Confirm hand-over')}</button>`);
+  if (isStaff() && needRecv) btns.push(`<button class="btn sec" id="rc">${tr('ยืนยันรับคืน', 'Confirm received')}</button>`);
+  if (out.length && (t.own || isStaff())) btns.push(`<button class="btn" id="rt">${tr('คืนอุปกรณ์', 'Return')}</button>`);
+  bar(btns.join(''));
+  if ($('#rt')) $('#rt').onclick = () => go('return', t.ticketId);
+  if ($('#edDue')) $('#edDue').onclick = () => { $('#dueBox').hidden = false; $('#edDue').hidden = true; };
+  if ($('#dueSave')) $('#dueSave').onclick = async (e) => { const v = $('#dueIn').value; if (!v) return; e.target.disabled = true; try { S.cur.data = await api('ticketDue', { ticketId: t.ticketId, dueAt: v + ':00' }); toast(tr('แก้กำหนดคืนแล้ว', 'Due time changed')); render(); } catch (x) { e.target.disabled = false; } };
+  if ($('#co')) $('#co').onclick = async (e) => { e.target.disabled = true; try { S.cur.data = await api('checkOut', { ticketId: t.ticketId }); S.cur.fresh = false; toast(tr('ยืนยันส่งมอบแล้ว', 'Hand-over confirmed')); render(); } catch (x) { e.target.disabled = false; } };
+  if ($('#rc')) $('#rc').onclick = async (e) => { e.target.disabled = true; try { S.cur.data = await api('receive', { ticketId: t.ticketId }); toast(tr('ยืนยันรับคืนแล้ว', 'Receipt confirmed')); render(); } catch (x) { e.target.disabled = false; } };
+};
+function qrSvg(text) {
+  try { const q = qrcode(0, 'M'); q.addData(text); q.make(); return q.createSvgTag({ cellSize: 4, margin: 2, scalable: true }); }
+  catch (e) { return ''; }
+}
+
+/* ---------- return ---------- */
+async function startReturn() {
+  loading(); setTop(tr('คืนอุปกรณ์', 'Return'), true);
+  let m; try { m = await api('mine'); } catch (e) { return render(); }
+  if (m.open.length === 1) return go('return', m.open[0].ticketId);
+  go('pickReturn', m);
+}
+VIEWS.pickReturn = (m) => {
+  setTop(tr('คืนอุปกรณ์', 'Return'), true);
+  app.innerHTML = m.open.length ? `<div class="card"><h2>${tr('เลือกใบเบิกที่จะคืน', 'Choose a ticket to return')}</h2>${m.open.map(tCard).join('')}</div>
+  <div class="card"><button class="btn sec" id="sc">${scanIco}${tr('หรือสแกนอุปกรณ์ที่จะคืน', 'Or scan an item to return')}</button></div>` : `<div class="card empty">${tr('ไม่มีอุปกรณ์ที่ยืมอยู่', 'You have nothing on loan')}</div>`;
+  if ($('#sc')) $('#sc').onclick = async () => { const v = await scanOnce(); if (v) scanned(v); };
+  document.querySelectorAll('[data-t]').forEach(el => el.onclick = () => go('return', el.dataset.t));
+};
+VIEWS.return = async (id) => {
+  setTop(tr('คืน ', 'Return ') + id, true);
+  if (!S.cur.data || S.cur.data.ticketId !== id) {
+    loading(); setTop(tr('คืน ', 'Return ') + id, true);
+    try { S.cur.data = await api('ticket', { ticketId: id }); } catch (e) { return back(); }
+    S.cur.ret = {};
+    S.cur.data.items_.filter(i => !i.returnedAt).forEach(i => S.cur.ret[i.code] = { on: true, cond: 'OK', note: '' });
+  }
+  const t = S.cur.data, R = S.cur.ret;
+  const out = t.items_.filter(i => !i.returnedAt);
+  const n = out.filter(i => R[i.code] && R[i.code].on).length;
+  app.innerHTML = `
+  <div class="card"><div class="row"><div class="grow hint">${tr('ติ๊กเฉพาะชิ้นที่คืนตอนนี้ เลือกสภาพของแต่ละชิ้น', 'Tick what you are returning now and set each item’s condition')}</div></div>
+  <div class="row" style="margin-top:8px"><button class="btn small sec" id="sc">${scanIco}${tr('สแกนติ๊กทีละชิ้น', 'Scan to tick')}</button><button class="btn small ghost" id="all">${n === out.length ? tr('ไม่เลือกทั้งหมด', 'Untick all') : tr('เลือกทั้งหมด', 'Tick all')}</button></div></div>
+  <div class="card">${out.map((i, k) => { const r = R[i.code]; return `<div class="item"><input type="checkbox" class="chk" data-c="${esc(i.code)}" ${r.on ? 'checked' : ''}>
+    <div class="grow"><div class="nm">${esc(i.name)}</div><div class="cd">${esc(i.code)}</div>
+    ${r.on ? `<div class="seg">${Object.keys(COND).map(c => `<button data-cc="${esc(i.code)}" data-v="${c}" class="${r.cond === c ? 'on' : ''} ${c === 'DAMAGED' ? 'd' : c === 'LOST' ? 'lo' : ''}">${esc(tr(COND[c][0], COND[c][1]))}</button>`).join('')}</div>
+    ${r.cond !== 'OK' ? `<input class="t" style="margin-top:6px" data-nt="${esc(i.code)}" value="${esc(r.note)}" placeholder="${r.cond === 'LOST' ? tr('หายที่ไหน เมื่อไร', 'Where/when was it lost') : tr('ชำรุดอย่างไร', 'What is damaged')}">` : ''}` : ''}</div></div>`; }).join('')}</div>`;
+  bar(`<button class="btn" id="ok" ${n ? '' : 'disabled'}>${tr('ยืนยันคืน', 'Confirm return')} (${n})</button>`);
+  document.querySelectorAll('.chk[data-c]').forEach(c => c.onchange = () => { R[c.dataset.c].on = c.checked; render(); });
+  document.querySelectorAll('[data-cc]').forEach(b => b.onclick = () => { R[b.dataset.cc].cond = b.dataset.v; render(); });
+  document.querySelectorAll('[data-nt]').forEach(i => i.oninput = () => { R[i.dataset.nt].note = i.value; });
+  $('#all').onclick = () => { const on = n !== out.length; out.forEach(i => R[i.code].on = on); render(); };
+  $('#sc').onclick = async () => {
+    const v = await scanOnce(); if (!v) return;
+    const code = (String(v).match(/[?&]c=([^&#\s]+)/) || [0, v])[1].trim().toUpperCase();
+    const hit = out.find(i => i.code.toUpperCase() === code);
+    if (!hit) return toast(tr('ชิ้นนี้ไม่อยู่ในใบเบิกนี้', 'That item is not on this ticket'), true);
+    R[hit.code].on = true; toast('✓ ' + hit.name); render();
+  };
+  $('#ok').onclick = async (e) => {
+    const items = out.filter(i => R[i.code].on).map(i => ({ code: i.code, cond: R[i.code].cond, note: (R[i.code].note || '').trim() }));
+    const miss = items.find(x => x.cond !== 'OK' && !x.note);
+    if (miss) return toast(tr('กรุณาระบุรายละเอียดของชิ้นที่ชำรุดหรือสูญหาย', 'Please describe the damaged or lost item'), true);
+    e.target.disabled = true; e.target.textContent = tr('กำลังบันทึก…', 'Saving…');
+    try {
+      const t2 = await api('returnItems', { ticketId: t.ticketId, items });
+      toast(t2.status === 'CLOSED' ? tr('คืนครบแล้ว ขอบคุณ', 'All returned. Thank you') : tr('บันทึกการคืนแล้ว', 'Return saved'));
+      if (items.some(x => x.cond !== 'OK')) setTimeout(() => toast(tr('แจ้งผู้ดูแลเรื่องชิ้นที่ชำรุด/สูญหายแล้ว', 'The admin has been told about damaged/lost items')), 2600);
+      S.me.openTickets = (S.me.openTickets || []).filter(x => x.ticketId !== t2.ticketId).concat(t2.status === 'CLOSED' ? [] : [t2]);
+      S.stack = [{ view: 'home' }]; S.cur = { view: 'ticket', arg: t2.ticketId, data: t2 }; render();
+    } catch (err) { e.target.disabled = false; e.target.textContent = tr('ยืนยันคืน', 'Confirm return'); }
+  };
+};
+
+/* ---------- mine ---------- */
+VIEWS.mine = async () => {
+  setTop(tr('รายการของฉัน', 'My tickets'), true);
+  loading(); setTop(tr('รายการของฉัน', 'My tickets'), true);
+  let m; try { m = await api('mine'); } catch (e) { return back(); }
+  app.innerHTML = `<div class="card"><h2>${tr('ยังไม่คืน', 'Not returned')}</h2>${m.open.length ? m.open.map(tCard).join('') : `<div class="empty">${tr('ไม่มี', 'None')}</div>`}</div>
+  <div class="card"><h2>${tr('คืนแล้ว (ล่าสุด)', 'Returned (latest)')}</h2>${m.closed.length ? m.closed.map(tCard).join('') : `<div class="empty">${tr('ยังไม่มีประวัติ', 'No history yet')}</div>`}</div>`;
+  bindTk();
+};
+
+/* ---------- repeat ---------- */
+async function repeatLast() {
+  loading(); setTop(tr('เบิกเหมือนครั้งก่อน', 'Same as last time'), true);
+  let r; try { r = await api('repeat'); } catch (e) { return render(); }
+  if (!r.items.length) { toast(tr('ยังไม่มีประวัติการเบิก', 'No previous borrowing yet')); return render(); }
+  const inCart = new Set(S.cart.flatMap(g => g.items.map(i => i.code)));
+  const byKit = {};
+  r.items.filter(i => !inCart.has(i.code)).forEach(i => { const k = i.kit || ('item:' + i.code); (byKit[k] = byKit[k] || []).push(i); });
+  let added = 0, skipped = 0;
+  Object.keys(byKit).forEach(k => {
+    const items = byKit[k].map(i => Object.assign(i, { sel: i.ok }));
+    added += items.filter(i => i.ok).length; skipped += items.filter(i => !i.ok).length;
+    if (k.startsWith('item:')) S.cart.push({ key: items[0].code, type: 'item', name: items[0].name, items });
+    else if (!S.cart.find(g => g.key === k)) S.cart.push({ key: k, type: 'kit', name: (r.kits || {})[k] || k, items });
+  });
+  saveCart();
+  toast(tr(`ใส่ตะกร้า ${added} ชิ้น`, `${added} item(s) added`) + (skipped ? tr(` · ${skipped} ชิ้นไม่ว่าง`, ` · ${skipped} not available`) : ''));
+  go('borrow');
+}
+
+/* ---------- asset info (scan by staff or unavailable item) ---------- */
+VIEWS.asset = (r) => {
+  setTop(r.type === 'kit' ? r.kit : r.type === 'group' ? r.group : r.item.code, true);
+  const items = r.type === 'item' ? [r.item] : r.items;
+  const t = [...new Set(items.filter(i => i.ticketId).map(i => i.ticketId))];
+  app.innerHTML = `<div class="card"><h2>${esc(r.type === 'item' ? r.item.name : r.name)}</h2>${items.map(i => `<div class="item"><div class="grow"><div class="nm">${esc(i.name)} ${stBadge(i.status)} ${calBadge(i.cal, i.calDue)}</div>
+  <div class="cd">${esc(i.code)}${i.model ? ' · ' + esc(i.model) : ''}${i.serial ? ' · S/N ' + esc(i.serial) : ''}</div>
+  ${i.holderName ? `<div class="hint">${tr('ผู้ยืม', 'Held by')} ${esc(i.holderName)} · ${esc(i.ticketId)} · ${esc(fdt(i.since))}</div>` : ''}${i.note ? `<div class="hint">${esc(i.note)}</div>` : ''}</div></div>`).join('')}</div>
+  ${t.map(id => `<button class="card tk" data-t="${esc(id)}" style="width:100%;text-align:left"><b>${tr('เปิดใบเบิก', 'Open ticket')} ${esc(id)}</b><span>›</span></button>`).join('')}`;
+  const can = items.some(i => i.ok);
+  bar(can ? `<button class="btn" id="add">${tr('เพิ่มลงตะกร้าเบิก', 'Add to borrow cart')}</button>` : '');
+  if ($('#add')) $('#add').onclick = () => { addToCart(r); go('borrow', null, true); };
+  bindTk();
+};
+
+/* ---------- admin ---------- */
+/* ---------- back office (ADMIN / CHECKER) ---------- */
+const ADMIN_TABS = [
+  ['dash', 'ภาพรวม', 'Dashboard'], ['assets', 'อุปกรณ์', 'Equipment'], ['projects', 'โครงการ', 'Projects'], ['cal', 'สอบเทียบ', 'Calibration'],
+  ['tickets', 'ใบเบิก', 'Tickets'], ['users', 'ผู้ใช้', 'Users'], ['settings', 'ตั้งค่า', 'Settings']
+];
+const isAdmin = () => S.me && S.me.user && S.me.user.role === 'ADMIN';
+function adminTabs(cur) {
+  return `<div class="tabs">${ADMIN_TABS.filter(x => x[0] !== 'settings' || isAdmin()).map(x => `<button class="${cur === x[0] ? 'on' : ''}" data-tab="${x[0]}">${esc(tr(x[1], x[2]))}</button>`).join('')}</div>`;
+}
+function bindTabs() { document.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { S.cur = { view: 'admin', arg: b.dataset.tab }; render(); window.scrollTo(0, 0); }); }
+/* filter state stays one object across renders, so a pending search keystroke and a select change both land */
+function keepDefaults(o, d) { o = o || {}; Object.keys(d).forEach(k => { if (o[k] === undefined) o[k] = d[k]; }); return o; }
+const fmtN = n => n == null ? '–' : Number(n).toLocaleString('en-US');
+function selOpts(list, cur) { return list.map(o => `<option value="${esc(o[0])}" ${String(cur) === String(o[0]) ? 'selected' : ''}>${esc(o[1])}</option>`).join(''); }
+
+VIEWS.admin = async (tab) => {
+  tab = tab || 'dash';
+  setTop(tr('หลังบ้าน', 'Back office'), true, tr('ทะเบียน โครงการ สอบเทียบ และการเบิก–คืนรายวัน', 'Register, projects, calibration and daily borrowing'));
+  app.innerHTML = adminTabs(tab) + '<div id="adm"><div class="spin"></div></div>';
+  bindTabs();
+  const box = $('#adm');
+  try { await ADMIN[tab](box); } catch (e) { if (box.isConnected) box.innerHTML = `<div class="card errbox">${esc(errText(e))}</div>`; }
+};
+const ADMIN = {};
+
+/* dashboard */
+ADMIN.dash = async (box) => {
+  const days = S.dashDays || 30;
+  const [d, o] = await Promise.all([api('dashboard', { days }), api('overview')]);
+  if (!box.isConnected) return;
+  const k = d.kpi, c = d.counts || {};
+  const max = Math.max(1, ...d.byDay.map(x => x.items));
+  const stat = (v, l, cls = '') => `<div class="stat ${cls}"><b>${v}</b><span>${l}</span></div>`;
+  box.innerHTML = `
+  ${o.pending.length ? `<div class="card" style="border-color:#e9c46a;background:#fffbef"><h2>${tr('รออนุมัติบัญชี', 'Accounts to approve')} (${o.pending.length})</h2>${o.pending.map(p => `<div class="item"><div class="grow"><div class="nm">${esc(p.name)} <span class="hint">${esc(p.empId)}</span></div>
+    <div class="hint">LINE: ${esc(p.lineName)} · ${tr('เบอร์ที่กรอก', 'Phone entered')} ${esc(p.phoneHint)}</div>
+    <div class="hint">${p.inRegister ? tr('อยู่ในทะเบียน: ', 'In register: ') + esc(p.registerName) + (p.position ? ' · ' + esc(p.position) : '') + (p.registerHasPhone ? '' : tr(' · ทะเบียนไม่มีเบอร์', ' · no phone on file')) : tr('ไม่อยู่ในทะเบียน', 'Not in the register')}</div>
+    <div class="row" style="margin-top:6px"><button class="btn small" data-ap="${esc(p.lineUserId)}">${tr('อนุมัติ', 'Approve')}</button><button class="btn small ghost" data-rj="${esc(p.lineUserId)}">${tr('ไม่อนุมัติ', 'Reject')}</button></div></div></div>`).join('')}</div>` : ''}
+  ${o.issues.length ? `<div class="card"><h2>${tr('แจ้งชำรุด/สูญหาย รอจัดการ', 'Damaged / lost to handle')} (${o.issues.length})</h2>${o.issues.map(i => `<div class="item"><div class="grow"><div class="nm">${esc(i.name)} <span class="badge ${i.type === 'LOST' ? 'b-bad' : 'b-warn'}">${esc(tr(COND[i.type][0], COND[i.type][1]))}</span></div>
+    <div class="cd">${esc(i.code)} · ${esc(i.ticketId)} · ${esc(i.reporter)} · ${esc(fdt(i.at))}</div><div class="hint">${esc(i.note)}</div>
+    <div class="row" style="margin-top:6px"><button class="btn small" data-fx="${esc(i.issueId)}">${tr('ซ่อมเสร็จ/พบแล้ว พร้อมเบิก', 'Fixed/found, available')}</button><button class="btn small ghost" data-cl="${esc(i.issueId)}">${tr('ปิดเรื่อง', 'Close')}</button></div></div></div>`).join('')}</div>` : ''}
+  <div class="row" style="margin:0 0 10px;flex-wrap:wrap"><span class="hint">${tr('ช่วงเวลา', 'Period')}</span>${[7, 30, 90].map(n => `<button class="chip ${days === n ? 'on' : ''}" data-days="${n}">${n} ${tr('วัน', 'days')}</button>`).join('')}</div>
+  <div class="kpis">
+    ${stat(fmtN(k.tickets), tr('ใบเบิก', 'Tickets'))}${stat(fmtN(k.items), tr('ชิ้นที่ถูกเบิก', 'Items borrowed'))}${stat(fmtN(k.returned), tr('ชิ้นที่คืน', 'Items returned'))}
+    ${stat(fmtN(k.open), tr('ใบที่ยังไม่คืน', 'Open tickets'))}${stat(fmtN(k.overdue), tr('เลยกำหนดคืน', 'Overdue'), k.overdue ? 'bad' : '')}${stat(k.onTimePct == null ? '–' : k.onTimePct + '%', tr('คืนตรงเวลา', 'Returned on time'))}
+    ${stat(k.avgHours == null ? '–' : k.avgHours, tr('ชม. ที่ยืมเฉลี่ย', 'Avg hours on loan'))}${stat(k.usedPct + '%', tr(`อุปกรณ์ถูกใช้ (${k.usedItems}/${k.borrowable})`, `Equipment used (${k.usedItems}/${k.borrowable})`))}${stat(fmtN(k.damaged + k.lost), tr('ชำรุด/สูญหาย', 'Damaged/lost'), (k.damaged + k.lost) ? 'warn' : '')}
+  </div>
+  <div class="card"><h2>${tr('ชิ้นที่ถูกเบิกต่อวัน', 'Items borrowed per day')}</h2>
+    <div class="chart">${d.byDay.map(x => `<div class="c" title="${esc(x.day)}: ${x.items}"><span class="v">${x.items || ''}</span><div class="bar2" style="height:${Math.round(x.items * 100 / max)}%"></div></div>`).join('')}</div>
+    <div class="row hint" style="justify-content:space-between;margin-top:4px"><span>${esc(fdt(d.byDay[0].day, false))}</span><span>${esc(fdt(d.byDay[d.byDay.length - 1].day, false))}</span></div></div>
+  <div class="cols">
+    <div class="card"><h2>${tr('ชุด/อุปกรณ์ที่ถูกเบิกบ่อย', 'Most borrowed')}</h2>${d.topItems.length ? `<table class="tbl"><tbody>${d.topItems.map((x, i) => `<tr><td class="n">${i + 1}</td><td>${esc(x.name)}<div class="cd">${esc(x.key)}</div></td><td class="r">${x.loans} ${tr('ครั้ง', 'x')}</td></tr>`).join('')}</tbody></table>` : `<div class="empty">${tr('ยังไม่มีการเบิกในช่วงนี้', 'No borrowing in this period')}</div>`}</div>
+    <div class="card"><h2>${tr('ผู้เบิกบ่อย', 'Top borrowers')}</h2>${d.topUsers.length ? `<table class="tbl"><tbody>${d.topUsers.map((x, i) => `<tr><td class="n">${i + 1}</td><td>${esc(x.name)}<div class="cd">${esc(x.empId)}</div></td><td class="r">${x.tickets} ${tr('ใบ', 'tickets')}</td></tr>`).join('')}</tbody></table>` : `<div class="empty">${tr('ยังไม่มี', 'None yet')}</div>`}</div>
+  </div>
+  <div class="card"><h2>${tr('เลยกำหนดคืนตอนนี้', 'Overdue now')} (${d.overdue.length})</h2>${d.overdue.length ? d.overdue.map(tCard).join('') : `<div class="empty">${tr('ไม่มี', 'None')}</div>`}</div>
+  ${d.byLocation ? `<div class="cols">
+    <div class="card"><h2>${tr('อุปกรณ์อยู่ที่ไหน', 'Where equipment is')}</h2><div class="chips">${d.byLocation.map(x => `<button class="chip" data-dloc="${esc(x.code)}">${esc(x.project ? (x.name && x.name !== x.code ? x.code + ' · ' + x.name : x.code) : tr('ร้าน ', 'Shop ') + x.code)} ${fmtN(x.n)}</button>`).join('')}</div></div>
+    <div class="card"><h2>${tr('สอบเทียบ', 'Calibration')}</h2><div class="chips">${['OVERDUE', 'SOON', 'MISSING', 'OK'].filter(s => d.cal[s]).map(s => `<button class="chip" data-dcal="${s}">${esc(tr(CALST[s][0], CALST[s][1]))} ${fmtN(d.cal[s])}</button>`).join('')}</div>
+      <p class="hint" style="margin:8px 0 0">${tr('นับเฉพาะเครื่องที่มีกติกาหรือวันสอบเทียบ', 'Only instruments with a rule or a calibration date')}</p></div></div>` : ''}
+  <div class="card"><h2>${tr('สถานะอุปกรณ์ทั้งหมด', 'Equipment status')} · ${fmtN(d.total)}</h2><div class="chips">${Object.keys(STATUS).filter(s => c[s]).map(s => `<button class="chip" data-st="${s}">${esc(tr(STATUS[s][0], STATUS[s][1]))} ${fmtN(c[s])}</button>`).join('')}</div></div>`;
+  bindTk();
+  document.querySelectorAll('[data-days]').forEach(b => b.onclick = () => { S.dashDays = +b.dataset.days; render(); });
+  document.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { S.af = Object.assign({}, S.af, { status: b.dataset.st, q: '', loc: '' }); S.cur = { view: 'admin', arg: 'assets' }; render(); });
+  document.querySelectorAll('[data-dloc]').forEach(b => b.onclick = () => { S.af = Object.assign({}, S.af, { loc: b.dataset.dloc, status: '', cal: '', q: '' }); S.cur = { view: 'admin', arg: 'assets' }; render(); });
+  document.querySelectorAll('[data-dcal]').forEach(b => b.onclick = () => { S.cf = Object.assign({}, S.cf, { st: b.dataset.dcal, loc: '' }); S.cur = { view: 'admin', arg: 'cal' }; render(); });
+  const act = async (fn, payload, okMsg) => { try { await api(fn, payload); toast(okMsg); } catch (e) {} render(); };
+  document.querySelectorAll('[data-ap]').forEach(b => b.onclick = () => act('approveUser', { lineUserId: b.dataset.ap, approve: true }, tr('อนุมัติแล้ว', 'Approved')));
+  document.querySelectorAll('[data-rj]').forEach(b => b.onclick = () => { if (confirm(tr('ไม่อนุมัติบัญชีนี้?', 'Reject this account?'))) act('approveUser', { lineUserId: b.dataset.rj, approve: false }, tr('บันทึกแล้ว', 'Saved')); });
+  document.querySelectorAll('[data-fx]').forEach(b => b.onclick = () => act('resolveIssue', { issueId: b.dataset.fx, available: true }, tr('พร้อมให้เบิกแล้ว', 'Available again')));
+  document.querySelectorAll('[data-cl]').forEach(b => b.onclick = () => act('resolveIssue', { issueId: b.dataset.cl, available: false }, tr('ปิดเรื่องแล้ว', 'Closed')));
+};
+
+/* equipment register (v1.2: locations, HO moves, calibration from Survey Inventory) */
+const OPS = {
+  reserve: ['จองให้โครงการ', 'Reserve for a project'], issue: ['จ่ายไปโครงการ', 'Issue to a project'], transfer: ['โอนไปโครงการอื่น', 'Transfer to another project'],
+  returnHO: ['รับคืนเข้า HO', 'Return to HO'], repairWait: ['แจ้งรอซ่อม', 'Report for repair'], sendRepair: ['ส่งร้านซ่อม', 'Send to repair shop'],
+  repairDone: ['รับคืนจากซ่อม', 'Back from repair'], sendCal: ['ส่งสอบเทียบ', 'Send for calibration'], calibrated: ['รับผลสอบเทียบ', 'Calibration done'],
+  recordCal: ['บันทึกใบรับรอง', 'Record a certificate'], requestDisposal: ['ขอตัดจำหน่าย', 'Request disposal'], completeDisposal: ['ตัดจำหน่ายแล้ว', 'Disposal done'],
+  cancelDisposal: ['ยกเลิกรอตัดจำหน่าย', 'Cancel disposal'], verify: ['ยืนยันตำแหน่ง/สถานะจริง', 'Confirm the actual state']
+};
+const MOVE_FROM = {
+  reserve: ['AVAILABLE'], issue: ['AVAILABLE', 'RESERVED'], transfer: ['AVAILABLE'], returnHO: ['AVAILABLE', 'RESERVED'],
+  repairWait: ['AVAILABLE', 'RESERVED'], sendRepair: ['REPAIR'], repairDone: ['AT_REPAIR'], sendCal: ['AVAILABLE'], calibrated: ['AT_CAL'],
+  recordCal: ['AVAILABLE', 'RESERVED', 'REPAIR', 'AT_REPAIR'],
+  requestDisposal: ['AVAILABLE', 'RESERVED', 'REPAIR', 'AT_REPAIR', 'AT_CAL', 'LOST', 'MISSING', 'CHECK'],
+  completeDisposal: ['DISPOSAL_PENDING'], cancelDisposal: ['DISPOSAL_PENDING'],
+  verify: ['AVAILABLE', 'RESERVED', 'REPAIR', 'AT_REPAIR', 'AT_CAL', 'LOST', 'MISSING', 'CHECK']
+};
+function opFits(op, a) {
+  if (!MOVE_FROM[op].includes(a.status)) return false;
+  const l = a.location;
+  if (op === 'reserve' || op === 'sendCal' || op === 'issue') return l === 'HO';
+  if (op === 'transfer') return l !== 'HO';
+  if (op === 'returnHO') return a.status === 'RESERVED' || l !== 'HO';
+  return true;
+}
+const KIT_OPS = { reserve: 1, issue: 1, transfer: 1, returnHO: 1 };
+const WHY = {
+  NOT_FOUND: ['ไม่พบรหัส', 'Code not found'], ON_LOAN: ['ถูกเบิกอยู่ ต้องคืนผ่านใบเบิกก่อน', 'On loan; return it through its ticket first'],
+  STATE: ['สถานะหรือที่อยู่ไม่ตรงกับรายการนี้', 'Its status or location does not fit this step'], SAME_PROJECT: ['อยู่โครงการนี้อยู่แล้ว', 'Already at that project'],
+  CAL_OVERDUE: ['เลยกำหนดสอบเทียบ จ่ายหรือโอนไม่ได้', 'Calibration overdue: cannot go out'], CAL_MISSING: ['ไม่มีข้อมูลสอบเทียบ จ่ายหรือโอนไม่ได้', 'No calibration data: cannot go out'],
+  CAL_NOTE: ['สอบเทียบเลยกำหนดหรือไม่มีข้อมูล ต้องใส่หมายเหตุ', 'Calibration overdue or missing: add a note'],
+  CAL_OLDER: ['วันที่เก่ากว่าที่บันทึกไว้', 'Older than the date on record'], NO_ORIGIN: ['ไม่พบสถานะก่อนขอตัดจำหน่าย', 'No state before the disposal request']
+};
+const CALST = {
+  OVERDUE: ['เลยกำหนด', 'Overdue', 'b-bad'], SOON: ['ถึงวันเรียกกลับ', 'Recall now', 'b-warn'], OK: ['อยู่ในรอบ', 'In date', 'b-ok'],
+  MISSING: ['ไม่มีข้อมูล', 'No data', 'b-mut'], NONE: ['ไม่มีรอบ', 'No cycle', 'b-mut'], INACTIVE: ['หยุดติดตาม', 'Not tracked', 'b-mut']
+};
+const calB = c => c && CALST[c] ? `<span class="badge ${CALST[c][2]}">${esc(tr(CALST[c][0], CALST[c][1]))}</span>` : '';
+const canStore = () => !!(S.me && S.me.caps ? S.me.caps.store : isAdmin());
+const unconfB = a => a.confirmed === false ? `<span class="badge b-warn">${tr('รอยืนยัน', 'Unconfirmed')}</span>` : '';
+function locLabel(code, projects) {
+  if (!code) return '–';
+  const p = (projects || S.projLite || []).find(x => x.code === code);
+  return p ? (p.name && p.name !== p.code ? `${p.code} · ${p.name}` : p.code) : code;
+}
+function whereLine(a, projects) {
+  const shop = a.status === 'AT_REPAIR' || a.status === 'AT_CAL';
+  let s = shop ? tr('ร้าน ', 'Shop ') + a.location : locLabel(a.location, projects);
+  if (a.status === 'RESERVED' && a.reservedFor) s += tr(' · จองให้ ', ' · reserved for ') + a.reservedFor;
+  if (a.custodian) s += ' · ' + a.custodian;
+  if (a.holderName) s += ' · ' + tr('ยืม: ', 'with ') + a.holderName;
+  return s;
+}
+
+ADMIN.assets = async (box) => {
+  if (!S.assetsCache || Date.now() - S.assetsCache.at > 60000) S.assetsCache = { at: Date.now(), d: await api('adminAssets') };
+  if (!box.isConnected) return;
+  const d = S.assetsCache.d, f = S.af = keepDefaults(S.af, { q: '', cat: '', status: '', cal: '', loc: '', unconf: false, limit: 60 });
+  S.projLite = d.projects || S.projLite;
+  S.sel = S.sel || new Set();
+  const cats = [...new Set(d.assets.map(a => a.category).filter(Boolean))].sort();
+  const locs = [...new Set(d.assets.map(a => a.location).filter(Boolean))].sort();
+  const kitName = {}; d.kits.forEach(k => kitName[k.kit] = k.name);
+  const q = f.q.trim().toUpperCase();
+  const list = d.assets.filter(a => (!f.cat || a.category === f.cat) && (!f.status || a.status === f.status) && (!f.loc || a.location === f.loc)
+    && (!f.unconf || !a.confirmed)
+    && (!f.cal || (f.cal === 'due' ? (a.cal === 'SOON' || a.cal === 'OVERDUE') : a.cal === f.cal))
+    && (!q || [a.code, a.name, a.brand, a.model, a.serial, a.kit, kitName[a.kit] || '', a.holderName, a.custodian, a.po].join(' ').toUpperCase().includes(q)));
+  const selRows = d.assets.filter(a => S.sel.has(a.code));
+  box.innerHTML = `
+  <div class="card"><div class="filters f6">
+    <input class="t" id="aq" placeholder="${tr('ค้นหา รหัส ชื่อ รุ่น S/N ชุด ผู้ถือ PO', 'Search code, name, model, S/N, set, holder, PO')}" value="${esc(f.q)}">
+    <select class="t" id="aloc"><option value="">${tr('ทุกที่', 'All locations')}</option>${selOpts(locs.map(x => [x, locLabel(x, d.projects)]), f.loc)}</select>
+    <select class="t" id="acat"><option value="">${tr('ทุกประเภท', 'All types')}</option>${selOpts(cats.map(x => [x, x]), f.cat)}</select>
+    <select class="t" id="ast"><option value="">${tr('ทุกสถานะ', 'All statuses')}</option>${selOpts(Object.keys(STATUS).filter(s => s !== 'ELSEWHERE').map(s => [s, tr(STATUS[s][0], STATUS[s][1])]), f.status)}</select>
+    <select class="t" id="acal"><option value="">${tr('สอบเทียบ: ทั้งหมด', 'Calibration: all')}</option>${selOpts([['due', tr('ถึงวันเรียกกลับ/เลยกำหนด', 'Recall or overdue')], ['OVERDUE', tr('เลยกำหนด', 'Overdue')], ['MISSING', tr('ไม่มีข้อมูล', 'No data')], ['OK', tr('อยู่ในรอบ', 'In date')]], f.cal)}</select>
+    <label class="row" style="gap:6px;font-size:14px"><input type="checkbox" class="chk" id="aunc" ${f.unconf ? 'checked' : ''}>${tr('เฉพาะรอยืนยัน', 'Unconfirmed only')}</label>
+  </div>
+  <div class="row" style="margin-top:10px;flex-wrap:wrap"><span class="hint grow">${tr('พบ', 'Found')} ${fmtN(list.length)} ${tr('รายการ', 'items')}${S.sel.size ? ' · ' + tr('เลือก', 'selected') + ' ' + S.sel.size : ''}</span>
+    <button class="btn small ghost" id="aselAll">${tr('เลือกที่แสดง', 'Select shown')}</button>
+    ${S.sel.size ? `<button class="btn small ghost" id="aselNone">${tr('ล้างที่เลือก', 'Clear selection')}</button>` : ''}
+    <button class="btn small ghost" id="acsv">${tr('ส่งออก CSV', 'Export CSV')}</button>
+    <button class="btn small sec" id="aprint" ${S.sel.size ? '' : 'disabled'}>${tr('พิมพ์ฉลาก QR', 'Print QR labels')}${S.sel.size ? ` (${S.sel.size})` : ''}</button>
+    ${d.canEdit ? `<button class="btn small sec" id="amove" ${S.sel.size ? '' : 'disabled'}>${tr('ทำรายการกับที่เลือก', 'Move selected')}${S.sel.size ? ` (${S.sel.size})` : ''}</button><button class="btn small" id="anew">+ ${tr('เพิ่มอุปกรณ์', 'Add equipment')}</button>` : ''}</div></div>
+  <div class="card" style="padding:0;overflow:auto"><table class="tbl wide-t"><thead><tr><th></th><th>${tr('รหัส', 'Code')}</th><th>${tr('อุปกรณ์', 'Equipment')}</th><th>${tr('สถานะ', 'Status')}</th><th>${tr('อยู่ที่ / ผู้รับผิดชอบ', 'Where / who')}</th><th>${tr('สอบเทียบ', 'Calibration')}</th></tr></thead><tbody>
+  ${list.slice(0, f.limit).map(a => `<tr class="clk" data-code="${esc(a.code)}"><td><input type="checkbox" class="chk" data-sel="${esc(a.code)}" ${S.sel.has(a.code) ? 'checked' : ''}></td>
+    <td class="mono">${esc(a.code)}</td><td><b>${esc(a.name)}</b><div class="cd">${esc([a.brand, a.model].filter(Boolean).join(' '))}${a.kit ? ' · 🧰 ' + esc(kitName[a.kit] || a.kit) : ''}</div></td>
+    <td>${stBadge(a.status)} ${unconfB(a)}</td><td class="cd">${esc(whereLine(a, d.projects))}</td><td>${a.cal ? calB(a.cal) + (a.calDue ? `<div class="cd">${esc(a.calDue)}</div>` : '') : ''}</td></tr>`).join('')}
+  </tbody></table>${list.length > f.limit ? `<div style="padding:12px"><button class="btn ghost" id="amore">${tr('แสดงเพิ่ม', 'Show more')} (${fmtN(list.length - f.limit)})</button></div>` : ''}${list.length ? '' : `<div class="empty">${tr('ไม่พบรายการ', 'Nothing found')}</div>`}</div>`;
+  let tm;
+  $('#aq').oninput = e => { clearTimeout(tm); tm = setTimeout(() => { f.q = e.target.value; f.limit = 60; const pos = e.target.selectionStart; render(); const n = $('#aq'); if (n) { n.focus(); n.setSelectionRange(pos, pos); } }, 250); };
+  [['#aloc', 'loc'], ['#acat', 'cat'], ['#ast', 'status'], ['#acal', 'cal']].forEach(([id, k]) => $(id).onchange = e => { f[k] = e.target.value; f.limit = 60; render(); });
+  $('#aunc').onchange = e => { f.unconf = e.target.checked; f.limit = 60; render(); };
+  if ($('#amore')) $('#amore').onclick = () => { f.limit += 200; render(); };
+  $('#aselAll').onclick = () => { list.slice(0, f.limit).forEach(a => S.sel.add(a.code)); render(); };
+  if ($('#aselNone')) $('#aselNone').onclick = () => { S.sel.clear(); render(); };
+  $('#acsv').onclick = () => exportCsv(list, d.projects);
+  $('#aprint').onclick = () => printLabels(selRows, kitName);
+  if ($('#amove')) $('#amove').onclick = () => go('move', { rows: selRows });
+  if ($('#anew')) $('#anew').onclick = () => go('assetEdit', { isNew: true, calTypes: d.calTypes, projects: d.projects, home: d.home });
+  document.querySelectorAll('[data-sel]').forEach(c => { c.onclick = e => e.stopPropagation(); c.onchange = () => { c.checked ? S.sel.add(c.dataset.sel) : S.sel.delete(c.dataset.sel); render(); }; });
+  document.querySelectorAll('tr[data-code]').forEach(r => r.onclick = () => go('assetAdmin', r.dataset.code));
+};
+
+function exportCsv(list, projects) {
+  const cols = [['code', 'รหัส'], ['name', 'อุปกรณ์'], ['category', 'ประเภท'], ['brand', 'ยี่ห้อ'], ['model', 'รุ่น'], ['serial', 'S/N'], ['status', 'สถานะ'],
+    ['location', 'อยู่ที่'], ['reservedFor', 'จองให้'], ['custodian', 'ผู้รับผิดชอบ'], ['holderName', 'ผู้ยืม'], ['ticketId', 'ใบเบิก'], ['calType', 'กติกาสอบเทียบ'],
+    ['calLast', 'สอบเทียบล่าสุด'], ['calDue', 'ครบกำหนด'], ['recall', 'เรียกกลับ'], ['cal', 'สถานะสอบเทียบ'], ['calCert', 'ใบรับรอง'], ['po', 'PO'], ['owner', 'เจ้าของ'],
+    ['warrantyStart', 'เริ่มประกัน'], ['warrantyEnd', 'หมดประกัน'], ['confirmed', 'ยืนยันแล้ว'], ['note', 'หมายเหตุ']];
+  const q = v => { v = v == null ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  const csv = '﻿' + [cols.map(c => c[1]).join(',')].concat(list.map(a => cols.map(c => q(c[0] === 'status' ? tr(STATUS[a.status] ? STATUS[a.status][0] : a.status, a.status) : a[c[0]])).join(','))).join('\r\n');
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  const el = document.createElement('a'); el.href = url; el.download = 'equipment-' + new Date().toISOString().slice(0, 10) + '.csv';
+  document.body.appendChild(el); el.click(); el.remove(); setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+function moveLine(m, projects) {
+  const d = m.d || {}, op = m.action.replace(/^(MOVE_|SI_)/, '');
+  let label;
+  if (m.action === 'SI_MERGE') label = tr('รวมข้อมูลจาก Survey Inventory', 'Merged from Survey Inventory') + (d.conflict ? ' · ' + tr('ข้อมูลสองระบบไม่ตรงกัน', 'the two registers disagreed') : '');
+  else if (/^ASSET_/.test(m.action)) label = { ASSET_ADD: tr('เพิ่มในทะเบียน', 'Added'), ASSET_EDIT: tr('แก้ทะเบียน', 'Edited'), ASSET_STATUS: tr('เปลี่ยนสถานะ', 'Status changed') }[m.action] || m.action;
+  else label = OPS[op] ? tr(OPS[op][0], OPS[op][1]) : op;
+  const st = s => s && STATUS[s] ? tr(STATUS[s][0], STATUS[s][1]) : (s || '');
+  let path = '';
+  if (d.from && d.to) path = `${st(d.from.status)} · ${d.from.location || '–'} → ${st(d.to.status)} · ${d.to.location || '–'}${d.to.reservedFor ? tr(' (จองให้ ', ' (for ') + d.to.reservedFor + ')' : ''}${d.to.custodian ? ' · ' + d.to.custodian : ''}`;
+  else if (d.ours && d.si) path = `${tr('ทีม BPNP', 'BPNP team')}: ${st(d.ours.status)} · ${d.ours.location} / Survey Inventory: ${st(d.si.status)} · ${d.si.location}`;
+  else if (/^ASSET_/.test(m.action)) path = Object.keys(d).filter(k => Array.isArray(d[k])).map(k => `${k}: ${d[k][0] || '–'} → ${d[k][1] || '–'}`).join(' · ');
+  const cal = d.cal && (d.cal.calLast || d.cal.cert) ? ` · ${tr('สอบเทียบ', 'cal')} ${d.cal.calLast || ''}${d.cal.calDue ? ' → ' + d.cal.calDue : ''}${d.cal.cert ? ' · ' + d.cal.cert : ''}` : '';
+  const src = /^SI_/.test(m.action) && m.action !== 'SI_MERGE' ? ' <span class="badge b-mut">Survey Inventory</span>' : '';
+  return `<div class="item"><div class="grow"><div class="nm">${esc(label)}${src}${d.calFlag ? ` <span class="badge b-bad">${tr('สอบเทียบ', 'Cal')} ${esc(d.calFlag)}</span>` : ''}</div>
+    <div class="cd">${esc(fdt(m.at))} · ${esc(m.actor)}</div>${path ? `<div class="hint">${esc(path)}${esc(cal)}</div>` : ''}${d.note ? `<div class="hint">${esc(d.note)}</div>` : ''}</div></div>`;
+}
+
+VIEWS.assetAdmin = async (code) => {
+  setTop(code, true);
+  const cur = S.cur;
+  if (!cur.data) { loading(); setTop(code, true); try { cur.data = await api('assetDetail', { code }); } catch (e) { return back(); } if (S.cur !== cur) return; }
+  const d = cur.data, a = d.asset;
+  S.projLite = d.projects || S.projLite;
+  const kv = (k, v) => v ? `<dt>${k}</dt><dd>${v}</dd>` : '';
+  app.innerHTML = `
+  <div class="card"><div class="kh"><h2 style="margin:0">${esc(a.name)} ${stBadge(a.status)} ${unconfB(a)}</h2></div>
+    <dl class="kv"><dt>${tr('รหัส', 'Code')}</dt><dd class="mono">${esc(a.code)}</dd><dt>${tr('ยี่ห้อ/รุ่น', 'Brand/model')}</dt><dd>${esc([a.brand, a.model].filter(Boolean).join(' ') || '–')}</dd>
+    <dt>S/N</dt><dd>${esc(a.serial || '–')}</dd><dt>${tr('ประเภท', 'Type')}</dt><dd>${esc(a.category)} · ${esc(a.type)}</dd>
+    <dt>${tr('อยู่ที่', 'Location')}</dt><dd><b>${esc(whereLine(a, d.projects))}</b></dd>
+    ${a.kit ? `<dt>${tr('ชุด', 'Set')}</dt><dd>🧰 ${esc(a.kitName || a.kit)} (${a.kitItems.length} ${tr('ชิ้น', 'items')})</dd>` : ''}
+    ${kv('PO', esc(a.po))}${kv(tr('เจ้าของ', 'Owner'), esc(a.owner))}${kv(tr('ประกัน', 'Warranty'), esc([a.warrantyStart, a.warrantyEnd].filter(Boolean).join(' → ')))}
+    <dt>${tr('สอบเทียบ', 'Calibration')}</dt><dd>${a.cal ? calB(a.cal) : '–'} ${a.calType ? `<span class="hint">${esc(a.calType)}</span>` : ''}
+      ${a.calLast || a.calDue ? `<div class="hint">${tr('ล่าสุด', 'Last')} ${esc(a.calLast || '–')} · ${tr('ครบกำหนด', 'Due')} ${esc(a.calDue || '–')}${a.recall ? ' · ' + tr('เรียกกลับ', 'Recall') + ' ' + esc(a.recall) : ''}${a.calCert ? ' · ' + tr('ใบรับรอง', 'Cert') + ' ' + esc(a.calCert) : ''}</div>` : ''}</dd>
+    ${a.holderName ? `<dt>${tr('ผู้ยืม', 'Held by')}</dt><dd>${esc(a.holderName)} · <a href="#" data-t="${esc(a.ticketId)}">${esc(a.ticketId)}</a> · ${esc(fdt(a.since))}</dd>` : ''}
+    <dt>${tr('หมายเหตุ', 'Note')}</dt><dd>${esc(a.note || '–')}</dd><dt>${tr('ถูกเบิกทั้งหมด', 'Times borrowed')}</dt><dd>${fmtN(d.loans)} ${tr('ครั้ง', 'times')}</dd></dl>
+    <div class="row" style="margin-top:10px;flex-wrap:wrap">${d.canEdit ? `<button class="btn small" id="aed">${tr('แก้ไขทะเบียน', 'Edit register')}</button>` : ''}<button class="btn small sec" id="apr">${tr('พิมพ์ฉลาก QR', 'Print QR label')}</button>${a.kit ? `<button class="btn small ghost" id="akit">${tr('พิมพ์ฉลากทั้งชุด', 'Print the whole set')}</button>` : ''}</div></div>
+  ${d.canEdit && d.ops.length ? `<div class="card"><h2>${tr('ทำรายการ', 'Move or update')}</h2><div class="opbtns">${d.ops.map(op => `<button class="btn small ${op === 'verify' ? 'ghost' : 'sec'}" data-op="${op}">${esc(tr(OPS[op][0], OPS[op][1]))}</button>`).join('')}</div>
+    ${a.status === 'ON_LOAN' ? '' : `<p class="hint" style="margin:8px 0 0">${tr('ทุกรายการบันทึกในประวัติด้านล่าง ระบบตรวจสถานะซ้ำก่อนบันทึก', 'Every step is logged below. The server checks the state again before saving.')}</p>`}</div>`
+    : a.status === 'ON_LOAN' && d.canEdit ? `<div class="card warnbox">${tr('ถูกเบิกอยู่ ต้องคืนผ่านใบเบิกก่อนจึงย้ายหรือส่งซ่อมได้', 'On loan: return it through its ticket before moving it.')}</div>` : ''}
+  ${a.kit ? `<details class="card"><summary><b>${tr('ชิ้นในชุดนี้', 'Items in this set')} (${a.kitItems.length})</b></summary>${a.kitItems.map(x => `<div class="item clk" data-code="${esc(x.code)}"><div class="grow"><div class="nm">${esc(x.name)} ${stBadge(x.status)}</div><div class="cd">${esc(x.code)} · ${esc(x.location)}</div></div></div>`).join('')}</details>` : ''}
+  <div class="card"><h2>${tr('ประวัติเคลื่อนย้ายและแก้ไข', 'Movements and edits')}</h2>${d.moves.length ? d.moves.map(m => moveLine(m, d.projects)).join('') : `<div class="empty">${tr('ยังไม่มี', 'None yet')}</div>`}</div>
+  <div class="card"><h2>${tr('ประวัติการเบิกรายวัน', 'Daily borrowing')}</h2>${d.history.length ? `<div style="overflow:auto"><table class="tbl"><thead><tr><th>${tr('ใบเบิก', 'Ticket')}</th><th>${tr('ผู้เบิก', 'Borrower')}</th><th>${tr('เบิก', 'Out')}</th><th>${tr('คืน', 'Back')}</th><th>${tr('สภาพ', 'Condition')}</th></tr></thead><tbody>
+    ${d.history.map(h => `<tr class="clk" data-t="${esc(h.ticketId)}"><td class="mono">${esc(h.ticketId)}</td><td>${esc(h.name)}</td><td>${esc(fdt(h.outAt))}</td><td>${h.returnedAt ? esc(fdt(h.returnedAt)) : `<span class="badge b-blue">${tr('ยังไม่คืน', 'Out')}</span>`}</td><td>${h.cond ? esc(tr(COND[h.cond][0], COND[h.cond][1])) + (h.note ? ' · ' + esc(h.note) : '') : ''}</td></tr>`).join('')}</tbody></table></div>` : `<div class="empty">${tr('ยังไม่เคยถูกเบิก', 'Never borrowed yet')}</div>`}</div>
+  ${d.issues.length ? `<div class="card"><h2>${tr('แจ้งปัญหา', 'Issues')}</h2>${d.issues.map(i => `<div class="item"><div class="grow"><div class="nm">${esc(tr(COND[i.type][0], COND[i.type][1]))} · ${esc(i.status === 'OPEN' ? tr('รอจัดการ', 'Open') : tr('ปิดแล้ว', 'Closed'))}</div><div class="cd">${esc(fdt(i.at))} · ${esc(i.reporter)} · ${esc(i.ticketId)}</div><div class="hint">${esc(i.note)}</div></div></div>`).join('')}</div>` : ''}`;
+  bindTk();
+  document.querySelectorAll('.item[data-code]').forEach(r => r.onclick = () => go('assetAdmin', r.dataset.code));
+  document.querySelectorAll('[data-op]').forEach(b => b.onclick = () => go('move', { rows: [a], op: b.dataset.op, projects: d.projects, shops: d.shops }));
+  if ($('#aed')) $('#aed').onclick = () => go('assetEdit', { code: a.code, a, calTypes: d.calTypes, projects: d.projects });
+  $('#apr').onclick = () => printLabels([a], { [a.kit]: a.kitName });
+  if ($('#akit')) $('#akit').onclick = () => printLabels(a.kitItems.map(x => Object.assign({ kit: a.kit, type: x.code.split('-')[4] }, x)), { [a.kit]: a.kitName });
+};
+
+/* one form for every HO-level step; the server re-checks each item and returns what could not move */
+VIEWS.move = async (arg) => {
+  const rows = arg.rows || [];
+  setTop(tr('ทำรายการ', 'Move or update') + ` (${rows.length})`, true);
+  if (!arg.projects || !arg.shops) {
+    loading(); setTop(tr('ทำรายการ', 'Move or update'), true);
+    try { const p = await api('projectsList'); arg.projects = p.projects.map(x => ({ code: x.code, name: x.name, closed: !!x.closedAt })); arg.shops = p.shops.map(s => s.name); } catch (e) { return back(); }
+  }
+  const ops = Object.keys(OPS).filter(op => rows.length && rows.every(r => opFits(op, r)));
+  const op = arg.op && ops.includes(arg.op) ? arg.op : '';
+  const open = arg.projects.filter(p => !p.closed);
+  const projSel = (id, withHO, cur) => `<select class="t" id="${id}"><option value="">${tr('เลือกโครงการ', 'Choose a project')}</option>${selOpts(open.filter(p => withHO || p.code !== 'HO').map(p => [p.code, p.name && p.name !== p.code ? p.code + ' · ' + p.name : p.code]), cur || '')}</select>`;
+  const shopIn = `<input class="t" id="mshop" list="shops" placeholder="GIS, CST, Topcon" value="${esc(arg.shop || '')}"><datalist id="shops">${(arg.shops || []).map(s => `<option value="${esc(s)}">`).join('')}</datalist>`;
+  const anyKit = rows.some(r => r.kit);
+  const L = (t, e) => `<label class="l">${tr(t, e)}</label>`;
+  let fields = '';
+  if (op === 'reserve' || op === 'issue' || op === 'transfer') {
+    fields = L('โครงการปลายทาง *', 'Destination project *') + projSel('mproj', false, rows[0].status === 'RESERVED' ? rows[0].reservedFor : '')
+      + L('ผู้รับผิดชอบที่โครงการ *', 'Person responsible at the project *') + `<input class="t" id="mcus" value="${esc(rows[0].status === 'RESERVED' ? rows[0].custodian || '' : '')}">`
+      + (anyKit ? `<label class="row" style="gap:8px;margin-top:12px"><input type="checkbox" class="chk" id="mkit" checked>${tr('ย้ายทั้งชุด (ชิ้นในชุดเดียวกันที่อยู่ที่เดียวกัน)', 'Move the whole set (items of the same set at the same place)')}</label>` : '');
+  } else if (op === 'sendRepair' || op === 'sendCal') fields = L('ชื่อร้าน *', 'Shop *') + shopIn;
+  else if (op === 'calibrated' || op === 'recordCal') {
+    fields = `<div class="cols"><div>${L('วันที่สอบเทียบ *', 'Calibration date *')}<input class="t" type="date" id="mclast"></div><div>${L('ครบกำหนดตามใบรับรอง', 'Due date on the certificate')}<input class="t" type="date" id="mcdue"></div></div>
+      <p class="hint" style="margin:4px 0 0">${tr('เว้นวันครบกำหนดว่างไว้ ระบบจะคำนวณจากรอบของประเภทเครื่อง', 'Leave the due date empty to use the cycle of this instrument type')}</p>`
+      + L('เลขใบรับรอง', 'Certificate no.') + `<input class="t" id="mcert">`;
+  } else if (op === 'verify') {
+    fields = L('สถานะจริงตอนนี้ *', 'Actual state now *') + `<select class="t" id="mvst">${selOpts([['AVAILABLE', tr('อยู่และใช้งานได้', 'Here and usable')], ['REPAIR', tr('ชำรุด รอซ่อม', 'Broken, waiting for repair')], ['RESERVED', tr('จองให้โครงการ อยู่ HO', 'Reserved, still at HO')], ['AT_REPAIR', tr('อยู่ร้านซ่อม', 'At a repair shop')], ['AT_CAL', tr('อยู่ร้านสอบเทียบ', 'At calibration')]], S.mvst || 'AVAILABLE')}</select>`
+      + `<div id="mvx"></div>`;
+  }
+  const noteReq = op === 'requestDisposal' || op === 'completeDisposal' || op === 'cancelDisposal';
+  app.innerHTML = `
+  <div class="card"><h2>${tr('รายการที่เลือก', 'Selected')}</h2>${rows.slice(0, 8).map(r => `<div class="item"><div class="grow"><div class="nm">${esc(r.name)} ${stBadge(r.status)}</div><div class="cd">${esc(r.code)} · ${esc(whereLine(r, arg.projects))}</div></div></div>`).join('')}${rows.length > 8 ? `<div class="hint">${tr('และอีก', 'and')} ${rows.length - 8}</div>` : ''}</div>
+  <div class="card"><h2>${tr('ทำอะไร', 'What to do')}</h2>${ops.length ? `<div class="opbtns">${ops.map(o => `<button class="btn small ${o === op ? '' : 'ghost'}" data-mop="${o}">${esc(tr(OPS[o][0], OPS[o][1]))}</button>`).join('')}</div>` : `<div class="warnbox">${tr('รายการที่เลือกมีสถานะหรือที่อยู่ต่างกัน ไม่มีรายการที่ทำพร้อมกันได้ เลือกเฉพาะเครื่องที่อยู่สถานะเดียวกัน', 'The selected items are in different states; no step fits them all. Select items in the same state.')}</div>`}
+    ${op ? `<div style="margin-top:6px">${fields}${L(noteReq ? 'เหตุผล / เลขเอกสาร *' : 'หมายเหตุ', noteReq ? 'Reason / document no. *' : 'Note')}<textarea class="t" id="mnote"></textarea></div><div id="merr"></div>` : ''}</div>`;
+  if (op) bar(`<button class="btn" id="msave">${tr('บันทึก', 'Save')} · ${esc(tr(OPS[op][0], OPS[op][1]))}</button>`);
+  document.querySelectorAll('[data-mop]').forEach(b => b.onclick = () => { arg.op = b.dataset.mop; render(); });
+  const vx = () => {
+    const st = $('#mvst').value; S.mvst = st;
+    $('#mvx').innerHTML = st === 'AT_REPAIR' || st === 'AT_CAL' ? L('ชื่อร้าน *', 'Shop *') + shopIn
+      : st === 'RESERVED' ? L('จองให้โครงการ *', 'Reserved for *') + projSel('mproj', false) + L('ผู้รับผิดชอบ *', 'Person responsible *') + `<input class="t" id="mcus">`
+      : L('อยู่ที่ *', 'Where *') + projSel('mloc', true, rows.length === 1 && rows[0].status !== 'AT_REPAIR' && rows[0].status !== 'AT_CAL' ? rows[0].location : '') + L('ผู้รับผิดชอบ', 'Person responsible') + `<input class="t" id="mcus" value="${esc(rows.length === 1 ? rows[0].custodian || '' : '')}">`;
+  };
+  if ($('#mvst')) { $('#mvst').onchange = vx; vx(); }
+  if (!op) return;
+  $('#msave').onclick = async e => {
+    const v = id => { const n = $('#' + id); return n ? n.value.trim() : ''; };
+    const p = { op, codes: rows.map(r => r.code), note: v('mnote'), project: v('mproj'), custodian: v('mcus'), shop: v('mshop'), calLast: v('mclast'), calDue: v('mcdue'), cert: v('mcert') };
+    if ($('#mkit')) p.withKit = $('#mkit').checked;
+    if (op === 'verify') { p.status = v('mvst'); p.location = v('mloc'); }
+    e.target.disabled = true; $('#merr').innerHTML = '';
+    try {
+      const r = await api('move', p, { quiet: true });
+      toast(tr(`บันทึกแล้ว ${r.moved} รายการ`, `Saved ${r.moved} item(s)`));
+      S.assetsCache = null; S.sel && S.sel.clear();
+      const prev = S.stack[S.stack.length - 1]; if (prev && prev.view === 'assetAdmin') prev.data = null;
+      back();
+    } catch (err) {
+      e.target.disabled = false;
+      let info = null; try { info = JSON.parse(err.message); } catch (x) {}
+      if (err.code === 'MOVE_BLOCKED' && info) {
+        $('#merr').innerHTML = `<div class="errbox" style="margin-top:10px"><b>${esc(tr(info.msg, `${info.bad.length} item(s) could not be saved`))}</b>${info.bad.slice(0, 20).map(b => `<div class="hint">${esc(b.code)} · ${esc(WHY[b.why] ? tr(WHY[b.why][0], WHY[b.why][1]) : b.why)}${b.calDue ? ' (' + esc(b.calDue) + ')' : ''}${b.ticketId ? ' · ' + esc(b.ticketId) : ''}</div>`).join('')}<div class="hint" style="margin-top:6px">${tr('ไม่มีรายการใดถูกบันทึก แก้แล้วลองใหม่', 'Nothing was saved. Fix these and try again.')}</div></div>`;
+        $('#merr').scrollIntoView({ block: 'center' });
+      } else $('#merr').innerHTML = `<div class="errbox" style="margin-top:10px">${esc(errText(err))}</div>`;
+    }
+  };
+};
+
+VIEWS.assetEdit = (arg) => {
+  const isNew = !!arg.isNew, a = arg.a || {};
+  setTop(isNew ? tr('เพิ่มอุปกรณ์', 'Add equipment') : tr('แก้ไข ', 'Edit ') + a.code, true);
+  const moveOnly = { ON_LOAN: 1, RESERVED: 1, AT_REPAIR: 1, AT_CAL: 1, DISPOSAL_PENDING: 1, RETIRED: 1 }[a.status];
+  const fld = (id, label, val, ph = '', type = 'text') => `<div><label class="l">${label}</label><input class="t" id="${id}" type="${type}" value="${esc(val || '')}" placeholder="${esc(ph)}"></div>`;
+  const types = arg.calTypes || [];
+  app.innerHTML = `
+  <div class="card">
+    ${isNew ? fld('fcode', tr('รหัสอุปกรณ์ *', 'Equipment code *'), '', 'UN-SV-GN-030-RC-001') + `<p class="hint" style="margin:4px 0 0">${tr('รูปแบบ UN-SV-หมวด-ชุด-ชนิด-ลำดับ ชุด 000 = ชิ้นเดี่ยว ชุดอื่นจะรวมเป็นชุดเอง', 'Format UN-SV-cat-set-type-no. Set 000 = single item; other sets are grouped automatically')}</p>` : ''}
+    ${fld('fname', tr('ชื่ออุปกรณ์ *', 'Name *'), a.name, 'Receiver')}
+    <div class="cols">${fld('fbrand', tr('ยี่ห้อ', 'Brand'), a.brand)}${fld('fmodel', tr('รุ่น', 'Model'), a.model)}</div>
+    <div class="cols">${fld('fserial', 'S/N', a.serial)}${fld('foffice', tr('สำนักงาน', 'Office'), a.office, 'MD / MDH')}</div>
+    ${isNew ? `<label class="l">${tr('อยู่ที่ *', 'Location *')}</label><select class="t" id="floc">${selOpts((arg.projects || []).filter(p => !p.closed).map(p => [p.code, p.name && p.name !== p.code ? p.code + ' · ' + p.name : p.code]), arg.home || 'BPNP')}</select>` : ''}
+    <label class="l">${tr('สถานะ', 'Status')}</label>${moveOnly ? `<div class="warnbox">${stBadge(a.status)} ${a.status === 'ON_LOAN' ? tr('ถูกเบิกอยู่ใน ', 'On loan in ') + esc(a.ticketId) + tr(' เปลี่ยนสถานะได้หลังคืน', '; change it after it is returned') : tr('เปลี่ยนผ่านปุ่ม "ทำรายการ" ในหน้าอุปกรณ์', 'Change it with the Move buttons on the equipment page')}</div>` :
+      `<select class="t" id="fstatus">${selOpts(['AVAILABLE', 'REPAIR', 'LOST', 'MISSING', 'CHECK'].map(s => [s, tr(STATUS[s][0], STATUS[s][1])]), a.status || 'AVAILABLE')}</select>`}
+    <div class="cols">${fld('fpo', 'PO', a.po)}${fld('fowner', tr('เจ้าของทรัพย์สิน', 'Owner'), a.owner, 'UN')}</div>
+    <div class="cols">${fld('fws', tr('เริ่มประกัน', 'Warranty start'), a.warrantyStart, '', 'date')}${fld('fwe', tr('หมดประกัน', 'Warranty end'), a.warrantyEnd, '', 'date')}</div>
+  </div>
+  <div class="card"><h2>${tr('สอบเทียบ', 'Calibration')}</h2>
+    <label class="l">${tr('กติกาตามประเภท', 'Rule by type')}</label><select class="t" id="fctype"><option value="">${tr('ไม่ติดตามสอบเทียบ', 'Not tracked')}</option>${selOpts(types.map(x => [x, x]), a.calType || '')}</select>
+    <div class="cols">${fld('fcallast', tr('สอบเทียบล่าสุด', 'Last calibration'), a.calLast, '', 'date')}${fld('fcaldue', tr('ครบกำหนดตามใบรับรอง', 'Due on certificate'), arg.a && arg.a.calDue && arg.a.calLast ? arg.a.calDue : (a.calDue || ''), '', 'date')}</div>
+    ${fld('fcert', tr('เลขใบรับรอง', 'Certificate no.'), a.calCert)}
+    <p class="hint" style="margin:6px 0 0">${tr('ถ้าเพิ่งได้ผลสอบเทียบ ใช้ "ทำรายการ → บันทึกใบรับรอง" แทน จะได้มีประวัติ', 'For a new certificate use Move → Record a certificate so it is kept in the history')}</p>
+  </div>
+  <div class="card"><label class="l">${tr('หมายเหตุ', 'Note')}</label><textarea class="t" id="fnote">${esc(a.note || '')}</textarea></div>`;
+  bar(`<button class="btn" id="fsave">${tr('บันทึก', 'Save')}</button>`);
+  $('#fsave').onclick = async (e) => {
+    const v = id => { const n = $('#' + id); return n ? n.value.trim() : undefined; };
+    const fields = { name: v('fname'), brand: v('fbrand'), model: v('fmodel'), serial: v('fserial'), office: v('foffice'), calLast: v('fcallast'), calDue: v('fcaldue'),
+      calType: v('fctype'), calCert: v('fcert'), po: v('fpo'), owner: v('fowner'), warrantyStart: v('fws'), warrantyEnd: v('fwe'), note: v('fnote') };
+    if (!moveOnly) fields.status = v('fstatus');
+    if (isNew) fields.location = v('floc');
+    e.target.disabled = true;
+    try {
+      const d = await api('assetSave', { isNew, code: isNew ? v('fcode') : a.code, fields });
+      S.assetsCache = null; toast(tr('บันทึกแล้ว', 'Saved'));
+      if (!isNew) S.stack.pop();
+      S.cur = { view: 'assetAdmin', arg: d.asset.code, data: d }; render(); window.scrollTo(0, 0);
+    } catch (x) { e.target.disabled = false; }
+  };
+};
+
+/* projects: open / close (close only when nothing is left there), shops seen in the data */
+ADMIN.projects = async (box) => {
+  const d = await api('projectsList');
+  if (!box.isConnected) return;
+  S.projLite = d.projects.map(p => ({ code: p.code, name: p.name, closed: !!p.closedAt }));
+  const showClosed = !!S.showClosed;
+  const list = d.projects.filter(p => showClosed || !p.closedAt);
+  box.innerHTML = `
+  <div class="card"><div class="kh"><h2 style="margin:0">${tr('โครงการ', 'Projects')} (${d.projects.filter(p => !p.closedAt).length} ${tr('เปิดอยู่', 'open')})</h2>
+    <label class="row" style="gap:6px;font-size:14px"><input type="checkbox" class="chk" id="pcl" ${showClosed ? 'checked' : ''}>${tr('แสดงที่ปิดแล้ว', 'Show closed')}</label></div>
+    <div style="overflow:auto"><table class="tbl"><thead><tr><th>${tr('รหัส', 'Code')}</th><th>${tr('ชื่อ', 'Name')}</th><th class="r">${tr('เครื่องที่อยู่', 'Here')}</th><th class="r">${tr('ถูกเบิก', 'On loan')}</th><th class="r">${tr('จองไว้', 'Reserved')}</th><th class="r">${tr('สอบเทียบต้องดู', 'Calibration')}</th><th></th></tr></thead><tbody>
+    ${list.map(p => `<tr><td class="mono">${esc(p.code)}${p.code === d.home ? ` <span class="badge b-blue">${tr('ทีมเบิกรายวัน', 'Daily team')}</span>` : ''}</td><td>${esc(p.name)}${p.closedAt ? ` <span class="badge b-mut">${tr('ปิดแล้ว', 'Closed')} ${esc(fdt(p.closedAt, false))}</span>` : ''}${p.note ? `<div class="cd">${esc(p.note)}</div>` : ''}</td>
+      <td class="r"><a href="#" data-ploc="${esc(p.code)}">${fmtN(p.at)}</a></td><td class="r">${fmtN(p.onLoan)}</td><td class="r">${fmtN(p.reserved)}</td><td class="r">${p.cal ? `<a href="#" data-pcal="${esc(p.code)}">${fmtN(p.cal)}</a>` : '0'}</td>
+      <td class="acts">${d.canEdit ? `<button class="btn small ghost" data-ped="${esc(p.code)}">${tr('แก้ชื่อ', 'Rename')}</button>${p.code === 'HO' ? '' : p.closedAt ? `<button class="btn small ghost" data-popen="${esc(p.code)}">${tr('เปิดใหม่', 'Reopen')}</button>` : `<button class="btn small ghost" data-pclose="${esc(p.code)}">${tr('ปิดโครงการ', 'Close')}</button>`}` : ''}</td></tr>`).join('')}
+    </tbody></table></div>
+    <p class="hint" style="margin:8px 0 0">${tr('ปิดโครงการได้เมื่อไม่มีเครื่องอยู่ ไม่มีเครื่องจองไว้ และไม่มีเครื่องที่ส่งร้านจากโครงการนี้ค้างอยู่ ประวัติยังค้นได้หลังปิด HO ปิดไม่ได้', 'A project can close only when nothing is there, reserved for it, or out at a shop from it. History stays searchable. HO cannot close.')}</p></div>
+  ${d.canEdit ? `<div class="card"><h2>${tr('เพิ่มโครงการ', 'Add a project')}</h2><div class="cols"><div><label class="l">${tr('รหัส *', 'Code *')}</label><input class="t" id="pcode" placeholder="BPNP"></div><div><label class="l">${tr('ชื่อ *', 'Name *')}</label><input class="t" id="pname"></div></div>
+    <div class="row" style="margin-top:10px"><button class="btn small" id="padd">${tr('เพิ่ม', 'Add')}</button></div></div>` : ''}
+  ${d.shops.length ? `<div class="card"><h2>${tr('ร้านซ่อม/สอบเทียบที่มีเครื่องอยู่', 'Shops holding instruments')}</h2>${d.shops.map(s => `<div class="item clk" data-ploc="${esc(s.name)}"><div class="grow"><div class="nm">${esc(s.name)}</div></div><span>${fmtN(s.at)} ›</span></div>`).join('')}</div>` : ''}`;
+  $('#pcl').onchange = e => { S.showClosed = e.target.checked; render(); };
+  document.querySelectorAll('[data-ploc]').forEach(el => el.onclick = e => { e.preventDefault(); S.af = Object.assign({}, S.af, { loc: el.dataset.ploc, status: '', cal: '', q: '', unconf: false }); S.cur = { view: 'admin', arg: 'assets' }; render(); });
+  document.querySelectorAll('[data-pcal]').forEach(el => el.onclick = e => { e.preventDefault(); S.cf = Object.assign({}, S.cf, { loc: el.dataset.pcal, st: 'track' }); S.cur = { view: 'admin', arg: 'cal' }; render(); });
+  const act = async (fn, payload, msg) => {
+    try { await api(fn, payload, { quiet: true }); toast(msg); S.assetsCache = null; render(); }
+    catch (err) {
+      let info = null; try { info = JSON.parse(err.message); } catch (x) {}
+      toast(info ? tr(`${info.msg} เช่น ${info.codes.join(', ')}`, `${info.total} item(s) are still at this project, e.g. ${info.codes.join(', ')}`) : errText(err), true);
+    }
+  };
+  document.querySelectorAll('[data-pclose]').forEach(b => b.onclick = () => { if (confirm(tr(`ปิดโครงการ ${b.dataset.pclose}? จะเลือกโครงการนี้สำหรับงานใหม่ไม่ได้ แต่ประวัติยังอยู่`, `Close ${b.dataset.pclose}? It cannot be chosen for new work; history stays.`))) act('projectStatus', { code: b.dataset.pclose, close: true }, tr('ปิดโครงการแล้ว', 'Project closed')); });
+  document.querySelectorAll('[data-popen]').forEach(b => b.onclick = () => act('projectStatus', { code: b.dataset.popen, close: false }, tr('เปิดโครงการแล้ว', 'Project reopened')));
+  document.querySelectorAll('[data-ped]').forEach(b => b.onclick = () => {
+    const p = d.projects.find(x => x.code === b.dataset.ped); const name = prompt(tr('ชื่อโครงการ', 'Project name'), p.name);
+    if (name && name.trim() && name.trim() !== p.name) act('projectSave', { code: p.code, name: name.trim(), note: p.note || '' }, tr('บันทึกแล้ว', 'Saved'));
+  });
+  if ($('#padd')) $('#padd').onclick = () => act('projectSave', { isNew: true, code: $('#pcode').value.trim(), name: $('#pname').value.trim() }, tr('เพิ่มโครงการแล้ว', 'Project added'));
+};
+
+/* calibration: rules per type + who has to come back for calibration, per project */
+ADMIN.cal = async (box) => {
+  const d = await api('calList');
+  if (!box.isConnected) return;
+  const f = S.cf = keepDefaults(S.cf, { st: 'track', loc: '', q: '', limit: 80 });
+  const q = f.q.trim().toUpperCase();
+  const cnt = s => d.items.filter(i => i.cal === s).length;
+  const list = d.items.filter(i => (f.st === 'all' || (f.st === 'track' ? (i.cal === 'OVERDUE' || i.cal === 'SOON') : i.cal === f.st)) && (!f.loc || i.location === f.loc)
+    && (!q || [i.code, i.name, i.model, i.serial, i.calType, i.custodian, i.calCert].join(' ').toUpperCase().includes(q)))
+    .sort((a, b) => (a.calDue || '9') < (b.calDue || '9') ? -1 : 1);
+  const locs = [...new Set(d.items.map(i => i.location).filter(Boolean))].sort();
+  box.innerHTML = `
+  <div class="kpis">
+    <button class="stat ${f.st === 'OVERDUE' ? 'on' : ''} bad" data-cst="OVERDUE"><b>${fmtN(cnt('OVERDUE'))}</b><span>${tr('เลยกำหนด', 'Overdue')}</span></button>
+    <button class="stat ${f.st === 'SOON' ? 'on' : ''} warn" data-cst="SOON"><b>${fmtN(cnt('SOON'))}</b><span>${tr('ถึงวันเรียกกลับ', 'Recall now')}</span></button>
+    <button class="stat ${f.st === 'MISSING' ? 'on' : ''}" data-cst="MISSING"><b>${fmtN(cnt('MISSING'))}</b><span>${tr('ไม่มีข้อมูล', 'No data')}</span></button>
+    <button class="stat ${f.st === 'OK' ? 'on' : ''}" data-cst="OK"><b>${fmtN(cnt('OK'))}</b><span>${tr('อยู่ในรอบ', 'In date')}</span></button>
+  </div>
+  <div class="card"><div class="filters f3">
+    <input class="t" id="cq" placeholder="${tr('ค้นหา รหัส รุ่น S/N ผู้ถือ เลขใบรับรอง', 'Search code, model, S/N, holder, certificate')}" value="${esc(f.q)}">
+    <select class="t" id="cloc"><option value="">${tr('ทุกโครงการ/ร้าน', 'All projects / shops')}</option>${selOpts(locs.map(x => [x, locLabel(x, d.projects)]), f.loc)}</select>
+    <select class="t" id="cst">${selOpts([['track', tr('ต้องติดตาม (เลยกำหนด + ถึงวันเรียกกลับ)', 'To follow up (overdue + recall)')], ['OVERDUE', tr('เลยกำหนด', 'Overdue')], ['SOON', tr('ถึงวันเรียกกลับ', 'Recall now')], ['MISSING', tr('ไม่มีข้อมูล', 'No data')], ['OK', tr('อยู่ในรอบ', 'In date')], ['all', tr('ทั้งหมด', 'All')]], f.st)}</select>
+  </div><div class="hint" style="margin-top:8px">${tr('พบ', 'Found')} ${fmtN(list.length)} ${tr('เครื่อง', 'instruments')} · ${tr('วันเรียกกลับ = วันครบกำหนด ลบ จำนวนวันเรียกกลับของประเภทนั้น', 'Recall date = due date minus the recall days of that type')}</div></div>
+  <div class="card" style="padding:0;overflow:auto"><table class="tbl wide-t"><thead><tr><th>${tr('รหัส', 'Code')}</th><th>${tr('เครื่อง', 'Instrument')}</th><th>${tr('อยู่ที่', 'Where')}</th><th>${tr('ล่าสุด', 'Last')}</th><th>${tr('ครบกำหนด', 'Due')}</th><th>${tr('เรียกกลับ', 'Recall')}</th><th>${tr('สถานะ', 'State')}</th></tr></thead><tbody>
+    ${list.slice(0, f.limit).map(i => `<tr class="clk" data-code="${esc(i.code)}"><td class="mono">${esc(i.code)}</td><td>${esc(i.calType || i.name)}<div class="cd">${esc([i.brand, i.model].filter(Boolean).join(' '))}${i.serial ? ' · ' + esc(i.serial) : ''}</div></td>
+      <td class="cd">${esc(whereLine(i, d.projects))}</td><td class="cd nw">${esc(i.calLast || '–')}</td><td class="cd nw">${esc(i.calDue || '–')}</td><td class="cd nw">${esc(i.recall || '–')}</td><td>${calB(i.cal)} ${stBadge(i.status)}</td></tr>`).join('')}
+  </tbody></table>${list.length > f.limit ? `<div style="padding:12px"><button class="btn ghost" id="cmore">${tr('แสดงเพิ่ม', 'Show more')} (${fmtN(list.length - f.limit)})</button></div>` : ''}${list.length ? '' : `<div class="empty">${tr('ไม่มีรายการ', 'Nothing here')}</div>`}</div>
+  <div class="card"><h2>${tr('กติกาสอบเทียบตามประเภท', 'Calibration rules by type')}</h2>
+    <div style="overflow:auto"><table class="tbl"><thead><tr><th>${tr('ประเภท', 'Type')}</th><th>${tr('รอบ (เดือน) · 0 = ไม่มีรอบ', 'Cycle (months) · 0 = none')}</th><th>${tr('เรียกกลับก่อน (วัน)', 'Recall days before')}</th><th class="r">${tr('เครื่อง', 'Instruments')}</th><th></th></tr></thead><tbody>
+    ${d.rules.map((r, i) => `<tr><td><b>${esc(r.type)}</b></td><td>${d.canEdit ? `<input class="t sm" type="number" min="0" max="60" id="rm${i}" value="${esc(r.months)}" style="width:80px">` : esc(r.months)}</td><td>${d.canEdit ? `<input class="t sm" type="number" min="0" max="180" id="rl${i}" value="${esc(r.lead)}" style="width:80px">` : esc(r.lead)}</td><td class="r">${fmtN(r.used)}</td>
+      <td class="acts">${d.canEdit ? `<button class="btn small ghost" data-rsave="${i}">${tr('บันทึก', 'Save')}</button>${r.used ? '' : `<button class="btn small ghost" data-rdel="${i}">${tr('ลบ', 'Delete')}</button>`}` : ''}</td></tr>`).join('')}
+    ${d.canEdit ? `<tr><td><input class="t sm" id="rnt" placeholder="${tr('ประเภทใหม่', 'New type')}"></td><td><input class="t sm" type="number" id="rnm" value="6" style="width:80px"></td><td><input class="t sm" type="number" id="rnl" value="20" style="width:80px"></td><td></td><td><button class="btn small" id="radd">${tr('เพิ่ม', 'Add')}</button></td></tr>` : ''}
+    </tbody></table></div>
+    <p class="hint" style="margin:8px 0 0">${tr('ค่า 6 เดือน / 20 วัน มาจาก Survey Inventory และยังเป็นค่าตั้งต้นที่ไม่มีใครทบทวน ให้ผู้รับผิดชอบคุณภาพเครื่องมือยืนยันก่อนใช้จริง วันครบกำหนดตามใบรับรองมีผลเหนือรอบเสมอ', 'The 6 months / 20 days values come from Survey Inventory and are unreviewed defaults. A due date from the certificate always wins over the cycle.')}</p></div>`;
+  let tm;
+  $('#cq').oninput = e => { clearTimeout(tm); tm = setTimeout(() => { f.q = e.target.value; const p = e.target.selectionStart; render(); const n = $('#cq'); if (n) { n.focus(); n.setSelectionRange(p, p); } }, 300); };
+  $('#cloc').onchange = e => { f.loc = e.target.value; render(); };
+  $('#cst').onchange = e => { f.st = e.target.value; render(); };
+  document.querySelectorAll('[data-cst]').forEach(b => b.onclick = () => { f.st = b.dataset.cst; render(); });
+  if ($('#cmore')) $('#cmore').onclick = () => { f.limit += 200; render(); };
+  document.querySelectorAll('tr[data-code]').forEach(r => r.onclick = () => go('assetAdmin', r.dataset.code));
+  const act = async (payload, msg) => { try { await api('calRuleSave', payload); toast(msg); S.assetsCache = null; render(); } catch (e) {} };
+  document.querySelectorAll('[data-rsave]').forEach(b => b.onclick = () => { const i = +b.dataset.rsave; act({ type: d.rules[i].type, months: $('#rm' + i).value, lead: $('#rl' + i).value }, tr('บันทึกกติกาแล้ว', 'Rule saved')); });
+  document.querySelectorAll('[data-rdel]').forEach(b => b.onclick = () => { const i = +b.dataset.rdel; if (confirm(tr('ลบกติกา ' + d.rules[i].type + '?', 'Delete rule ' + d.rules[i].type + '?'))) act({ type: d.rules[i].type, remove: true }, tr('ลบแล้ว', 'Deleted')); });
+  if ($('#radd')) $('#radd').onclick = () => act({ type: $('#rnt').value.trim(), months: $('#rnm').value, lead: $('#rnl').value }, tr('เพิ่มกติกาแล้ว', 'Rule added'));
+};
+
+/* print QR labels: A4, 3 x 8 labels of 70 x 37 mm, QR opens the LIFF app with the code */
+function printLabels(items, kitName) {
+  if (!items.length) return;
+  const w = window.open('', '_blank');
+  if (!w) return toast(tr('เบราว์เซอร์บล็อกหน้าต่างพิมพ์ กรุณาอนุญาตป๊อปอัป', 'The browser blocked the print window. Please allow pop-ups.'), true);
+  const lab = items.map(a => `<div class="lb"><div class="q">${qrSvg(`https://liff.line.me/${CFG.liffId}?c=${a.code}`)}</div><div class="tx"><div class="br">EQUIPMENT Unique</div>${a.kit && a.type === 'BX' ? '<div class="set">WHOLE SET</div>' : ''}<div class="nm">${esc(a.name)}</div><div class="md">${esc(a.model || (kitName && kitName[a.kit]) || '')}</div><div class="cd">${esc(a.code)}</div></div></div>`).join('');
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>QR labels (${items.length})</title><style>
+  @page{size:A4;margin:10.5mm 0}body{margin:0;font-family:Arial,sans-serif}.sheet{display:grid;grid-template-columns:repeat(3,70mm);grid-auto-rows:37mm;justify-content:center}
+  .lb{display:flex;align-items:center;gap:2mm;padding:2mm;border:0.2mm dashed #ccc;overflow:hidden;break-inside:avoid}.q svg{width:31mm;height:31mm;display:block}
+  .tx{min-width:0;flex:1}.br{font-size:7pt;font-weight:700;color:#95191F}.set{display:inline-block;background:#95191F;color:#fff;font-size:6.5pt;font-weight:700;padding:0.5mm 1.5mm;border-radius:1mm;margin:0.8mm 0}
+  .nm{font-size:8.5pt;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.md{font-size:6.5pt;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cd{font:700 7pt monospace;word-break:break-all;margin-top:1mm}
+  @media screen{body{background:#eee}.sheet{background:#fff;width:210mm;margin:10px auto;padding:10px 0}}</style></head>
+  <body><div class="sheet">${lab}</div><script>setTimeout(function(){window.print()},400)<\/script></body></html>`);
+  w.document.close();
+}
+
+/* all tickets */
+ADMIN.tickets = async (box) => {
+  const f = S.tf = keepDefaults(S.tf, { status: 'open', q: '', from: '', to: '' });
+  const d = await api('ticketsList', f);
+  if (!box.isConnected) return;
+  box.innerHTML = `
+  <div class="card"><div class="chips">${[['open', 'กำลังยืม', 'On loan'], ['overdue', 'เลยกำหนด', 'Overdue'], ['closed', 'คืนครบ', 'Returned'], ['all', 'ทั้งหมด', 'All']].map(x => `<button class="chip ${f.status === x[0] ? 'on' : ''}" data-ts="${x[0]}">${esc(tr(x[1], x[2]))}</button>`).join('')}</div>
+    <div class="filters" style="margin-top:10px"><input class="t" id="tq" placeholder="${tr('ค้นหา เลขใบเบิก ชื่อ รหัสพนักงาน รหัสอุปกรณ์ หน้างาน', 'Search ticket, name, employee ID, equipment code, site')}" value="${esc(f.q)}">
+    <input class="t" type="date" id="tfrom" value="${esc(f.from)}" title="${tr('ตั้งแต่', 'From')}"><input class="t" type="date" id="tto" value="${esc(f.to)}" title="${tr('ถึง', 'To')}"></div>
+    <div class="hint" style="margin-top:8px">${tr('พบ', 'Found')} ${fmtN(d.total)} ${tr('ใบ', 'tickets')}${d.total > d.tickets.length ? tr(' (แสดง 300 ใบล่าสุด)', ' (showing the latest 300)') : ''}</div></div>
+  <div class="card">${d.tickets.length ? d.tickets.map(t => `<div class="tk item" data-t="${esc(t.ticketId)}"><div class="grow"><div class="id">${esc(t.ticketId)} ${tBadge(t)}</div>
+    <div class="hint">${esc(t.name)} · ${esc(t.empId)} · ${t.returned}/${t.items} ${tr('คืนแล้ว', 'returned')} · ${tr('เบิก', 'out')} ${esc(fdt(t.createdAt))} · ${tr('คืน', 'due')} ${esc(fdt(t.dueAt))}${t.site ? ' · ' + esc(t.site) : ''}</div></div><span>›</span></div>`).join('') : `<div class="empty">${tr('ไม่พบใบเบิก', 'No tickets found')}</div>`}</div>`;
+  bindTk();
+  document.querySelectorAll('[data-ts]').forEach(b => b.onclick = () => { f.status = b.dataset.ts; render(); });
+  let tm;
+  $('#tq').oninput = e => { clearTimeout(tm); tm = setTimeout(() => { f.q = e.target.value; render(); }, 500); };
+  $('#tfrom').onchange = e => { f.from = e.target.value; render(); };
+  $('#tto').onchange = e => { f.to = e.target.value; render(); };
+};
+
+/* users, employees, act-as */
+ADMIN.users = async (box) => {
+  const d = await api('usersList');
+  if (!box.isConnected) return;
+  S.usersData = d; S.usersAt = Date.now();
+  const ST = { ACTIVE: ['ใช้งาน', 'Active', 'b-ok'], PENDING: ['รออนุมัติ', 'Pending', 'b-warn'], DISABLED: ['ปิดบัญชี', 'Disabled', 'b-mut'], REJECTED: ['ไม่อนุมัติ', 'Rejected', 'b-bad'] };
+  const ub = s => { const x = ST[s] || [s, s, 'b-mut']; return `<span class="badge ${x[2]}">${esc(tr(x[0], x[1]))}</span>`; };
+  const uq = (S.uq || '').toUpperCase(), eq = (S.eq || '').toUpperCase();
+  const users = d.users.filter(u => !uq || [u.name, u.empId, u.lineName, u.position].join(' ').toUpperCase().includes(uq));
+  const emps = d.employees.filter(e => !eq || [e.name, e.nameEn, e.nickname, e.empId, e.position].join(' ').toUpperCase().includes(eq));
+  box.innerHTML = `
+  <div class="card"><div class="kh"><h2 style="margin:0">${tr('บัญชีผู้ใช้', 'Accounts')} (${d.users.length})</h2></div>
+    <input class="t" id="uq" placeholder="${tr('ค้นหาชื่อ รหัส ชื่อ LINE', 'Search name, ID, LINE name')}" value="${esc(S.uq || '')}" style="margin-bottom:6px">
+    <div style="overflow:auto"><table class="tbl"><thead><tr><th>${tr('ชื่อ', 'Name')}</th><th>${tr('สถานะ', 'Status')}</th><th>${tr('สิทธิ์', 'Role')}</th><th>${tr('ใช้ล่าสุด', 'Last seen')}</th><th></th></tr></thead><tbody>
+    ${users.map(u => `<tr><td><b>${esc(u.name)}</b><div class="cd">${esc(u.empId)}${u.lineName ? ' · LINE: ' + esc(u.lineName) : ''}${u.position ? ' · ' + esc(u.position) : ''}${u.inRegister ? '' : ' · ' + tr('ไม่อยู่ในทะเบียน', 'not in register')}</div></td>
+      <td>${ub(u.status)}</td>
+      <td>${d.isAdmin && u.lineUserId !== d.me ? `<select class="t sm" data-role="${esc(u.lineUserId)}">${selOpts(['USER', 'VIEWER', 'CHECKER', 'STORE', 'ADMIN'].map(r => [r, tr(ROLE_TH[r][0], ROLE_TH[r][1])]), u.role)}</select>` : esc(u.role)}</td>
+      <td class="cd">${u.lastSeen ? esc(fdt(u.lastSeen)) : '–'}</td>
+      <td class="acts">${d.isAdmin && u.lineUserId !== d.me ? `${u.status === 'PENDING' ? `<button class="btn small" data-ap="${esc(u.lineUserId)}">${tr('อนุมัติ', 'Approve')}</button>` : ''}
+        ${u.status === 'ACTIVE' ? `<button class="btn small sec" data-as="${esc(u.lineUserId)}">${tr('กดแทน', 'Act as')}</button><button class="btn small ghost" data-us="DISABLED" data-u="${esc(u.lineUserId)}">${tr('ปิดบัญชี', 'Disable')}</button>` : ''}
+        ${u.status === 'DISABLED' || u.status === 'REJECTED' ? `<button class="btn small ghost" data-us="ACTIVE" data-u="${esc(u.lineUserId)}">${tr('เปิดใช้', 'Enable')}</button>` : ''}` : ''}</td></tr>`).join('')}
+    </tbody></table></div>
+    <p class="hint" style="margin:8px 0 0">${tr('กดแทน = เข้าระบบในมุมมองของผู้ใช้คนนั้นและทำรายการแทนได้ทุกอย่าง (เบิก คืน) ทุกการกดถูกบันทึกว่าผู้ดูแลคนไหนทำแทน', 'Act as = use the system as that person and do anything they can (borrow, return). Every action is logged with the admin who did it.')}<br>
+      ${tr('สิทธิ์: ผู้ใช้ = เบิก–คืน · ผู้ดูข้อมูล = ดูหลังบ้านอย่างเดียว · ผู้ตรวจรับ = ยืนยันส่งมอบ/รับคืน อนุมัติบัญชี · ผู้ดูแลคลัง = จอง จ่าย โอน ส่งซ่อม/สอบเทียบ แก้ทะเบียนและโครงการ · ผู้ดูแลระบบ = ทั้งหมดรวมผู้ใช้และการตั้งค่า', 'Roles: User = borrow and return · Viewer = read the back office · Checker = hand-over/receipt, approve sign-ups · Store keeper = reserve, issue, transfer, repair/calibration, register and projects · Admin = everything incl. users and settings')}</p></div>
+  <div class="card"><div class="kh"><h2 style="margin:0">${tr('ทะเบียนพนักงาน', 'Employee register')} (${d.employees.length})</h2>${d.isAdmin ? `<button class="btn small" id="enew">+ ${tr('เพิ่มพนักงาน', 'Add employee')}</button>` : ''}</div>
+    <input class="t" id="eq" placeholder="${tr('ค้นหาชื่อ รหัส ตำแหน่ง', 'Search name, ID, position')}" value="${esc(S.eq || '')}" style="margin-bottom:6px">
+    <div style="overflow:auto"><table class="tbl"><thead><tr><th>${tr('รหัส', 'ID')}</th><th>${tr('ชื่อ', 'Name')}</th><th>${tr('ตำแหน่ง', 'Position')}</th><th>${tr('เบอร์', 'Phone')}</th><th>${tr('ลงทะเบียน', 'Registered')}</th></tr></thead><tbody>
+    ${emps.map(e => `<tr class="${d.isAdmin ? 'clk' : ''}" data-emp="${esc(e.empId)}"><td class="mono">${esc(e.empId)}</td><td><b>${esc(e.name || e.nameEn)}</b><div class="cd">${esc([e.nameEn, e.nickname].filter(Boolean).join(' · '))}</div></td><td class="cd">${esc(e.position)}</td>
+      <td class="cd">${e.phone ? esc(e.phone) : `<span class="badge b-warn">${tr('ไม่มีเบอร์', 'No phone')}</span>`}</td><td>${!e.active ? `<span class="badge b-mut">${tr('ปิด', 'Off')}</span>` : e.registered ? `<span class="badge b-ok">${tr('แล้ว', 'Yes')}</span>` : `<span class="hint">${tr('ยัง', 'Not yet')}</span>`}</td></tr>`).join('')}
+    </tbody></table></div>
+    <p class="hint" style="margin:8px 0 0">${tr('พนักงานที่มีเบอร์ในทะเบียน ลงทะเบียนด้วยรหัส + เบอร์แล้วใช้ได้ทันที คนที่ไม่มีเบอร์ต้องรอผู้ดูแลอนุมัติ เพิ่มเบอร์ให้ได้ที่นี่', 'People with a phone on file can sign up with ID + phone and start at once; people without one wait for approval. Add their phone here.')}</p></div>`;
+  let tm;
+  $('#uq').oninput = e => { clearTimeout(tm); tm = setTimeout(() => { S.uq = e.target.value; const p = e.target.selectionStart; render(); const n = $('#uq'); if (n) { n.focus(); n.setSelectionRange(p, p); } }, 300); };
+  $('#eq').oninput = e => { clearTimeout(tm); tm = setTimeout(() => { S.eq = e.target.value; const p = e.target.selectionStart; render(); const n = $('#eq'); if (n) { n.focus(); n.setSelectionRange(p, p); } }, 300); };
+  const act = async (fn, payload, okMsg) => { try { await api(fn, payload); toast(okMsg); } catch (e) {} render(); };
+  document.querySelectorAll('[data-role]').forEach(s => s.onchange = () => act('userSave', { lineUserId: s.dataset.role, role: s.value }, tr('เปลี่ยนสิทธิ์แล้ว', 'Role changed')));
+  document.querySelectorAll('[data-ap]').forEach(b => b.onclick = () => act('approveUser', { lineUserId: b.dataset.ap, approve: true }, tr('อนุมัติแล้ว', 'Approved')));
+  document.querySelectorAll('[data-us]').forEach(b => b.onclick = () => { if (b.dataset.us === 'DISABLED' && !confirm(tr('ปิดบัญชีนี้? ผู้ใช้จะเข้าระบบไม่ได้จนกว่าจะเปิดใหม่', 'Disable this account? They cannot use the system until it is enabled again.'))) return; act('userSave', { lineUserId: b.dataset.u, status: b.dataset.us }, tr('บันทึกแล้ว', 'Saved')); });
+  document.querySelectorAll('[data-as]').forEach(b => b.onclick = () => { const u = d.users.find(x => x.lineUserId === b.dataset.as); startActAs(u); });
+  document.querySelectorAll('tr[data-emp]').forEach(r => { if (d.isAdmin) r.onclick = () => go('empEdit', { e: d.employees.find(x => x.empId === r.dataset.emp), projects: d.projects, home: d.home }); });
+  if ($('#enew')) $('#enew').onclick = () => go('empEdit', { isNew: true, e: {}, projects: d.projects, home: d.home });
+};
+
+VIEWS.empEdit = (arg) => {
+  const isNew = !!arg.isNew, e = arg.e || {};
+  setTop(isNew ? tr('เพิ่มพนักงาน', 'Add employee') : (e.name || e.nameEn), true);
+  const fld = (id, label, val, ph = '', mode = '') => `<label class="l">${label}</label><input class="t" id="${id}" value="${esc(val || '')}" placeholder="${esc(ph)}" ${mode ? `inputmode="${mode}"` : ''}>`;
+  app.innerHTML = `<div class="card">
+    ${isNew ? fld('eid', tr('รหัสพนักงาน *', 'Employee ID *'), '', '6900000', 'numeric') : `<dl class="kv"><dt>${tr('รหัสพนักงาน', 'Employee ID')}</dt><dd class="mono">${esc(e.empId)}</dd></dl>`}
+    <div class="cols">${fld('ename', tr('ชื่อ-นามสกุล (ไทย)', 'Name (Thai)'), e.name)}${fld('enameen', tr('ชื่อ-นามสกุล (อังกฤษ)', 'Name (English)'), e.nameEn)}</div>
+    <div class="cols">${fld('enick', tr('ชื่อเล่น', 'Nickname'), e.nickname)}${fld('enicken', tr('ชื่อเล่น (อังกฤษ)', 'Nickname (English)'), e.nicknameEn)}</div>
+    ${fld('epos', tr('ตำแหน่ง', 'Position'), e.position)}
+    <div class="cols">${fld('ephone', tr('เบอร์โทร (ใช้ยืนยันตอนลงทะเบียน)', 'Phone (used to verify sign-up)'), e.phone, '08x-xxx-xxxx', 'tel')}${fld('eemail', tr('อีเมล', 'Email'), e.email)}</div>
+    <div class="cols">${fld('eteam', tr('ทีม', 'Team'), e.team || 'Survey BPNP (MD)')}<div><label class="l">${tr('โครงการที่เบิก–คืนรายวัน', 'Project for daily borrowing')}</label><select class="t" id="eproj"><option value="">${tr('ตามค่าตั้งต้น', 'Default')} (${esc(arg.home || 'BPNP')})</option>${selOpts((arg.projects || []).filter(p => p.code !== 'HO' && !p.closed).map(p => [p.code, p.name && p.name !== p.code ? p.code + ' · ' + p.name : p.code]), e.project || '')}</select></div></div>
+    <label class="row" style="margin-top:12px;gap:8px"><input type="checkbox" class="chk" id="eact" ${isNew || e.active ? 'checked' : ''}> ${tr('ยังทำงานอยู่ (ลงทะเบียนได้)', 'Still employed (can sign up)')}</label></div>`;
+  bar(`<button class="btn" id="esave">${tr('บันทึก', 'Save')}</button>`);
+  $('#esave').onclick = async (ev) => {
+    const v = id => $('#' + id).value.trim();
+    const fields = { name: v('ename'), nameEn: v('enameen'), nickname: v('enick'), nicknameEn: v('enicken'), position: v('epos'), phone: v('ephone'), email: v('eemail'), team: v('eteam'), project: $('#eproj').value, active: $('#eact').checked };
+    ev.target.disabled = true;
+    try { await api('employeeSave', { isNew, empId: isNew ? v('eid') : e.empId, fields }); toast(tr('บันทึกแล้ว', 'Saved')); back(); } catch (x) { ev.target.disabled = false; }
+  };
+};
+
+/* settings */
+ADMIN.settings = async (box) => {
+  const d = S.usersData && Date.now() - (S.usersAt || 0) < 30000 ? S.usersData : await api('usersList');
+  if (!box.isConnected) return;
+  const s = d.settings;
+  const yn = (id, label, val, hint) => `<label class="row" style="gap:8px;margin-top:12px"><input type="checkbox" class="chk" id="${id}" ${val === 'TRUE' ? 'checked' : ''}><span>${label}</span></label>${hint ? `<div class="hint" style="margin-left:30px">${hint}</div>` : ''}`;
+  box.innerHTML = `<div class="card"><h2>${tr('การเบิก-คืน', 'Borrowing')}</h2>
+    <div class="cols"><div><label class="l">${tr('เวลาคืนตั้งต้น (วันเดียวกับที่เบิก)', 'Default return time (same day)')}</label><input class="t" type="time" id="s1" value="${esc(s.RETURN_TIME)}"></div>
+    <div><label class="l">${tr('แจ้งเตือนก่อนครบกำหนดคืน (นาที)', 'Remind before due (minutes)')}</label><input class="t" type="number" min="0" id="s2" value="${esc(s.REMIND_BEFORE_MIN)}"></div></div>
+    <div class="cols"><div><label class="l">${tr('เวลาส่งเตือนค้างคืนซ้ำทุกวัน (ชั่วโมง)', 'Daily overdue reminder (hour)')}</label><input class="t" type="number" min="0" max="23" id="s3" value="${esc(s.OVERDUE_DAILY_HOUR)}"></div>
+    <div><label class="l">${tr('เตือนใกล้ครบสอบเทียบล่วงหน้า (วัน)', 'Calibration warning (days ahead)')}</label><input class="t" type="number" min="0" id="s4" value="${esc(s.CAL_WARN_DAYS)}"></div></div>
+    ${yn('s5', tr('ห้ามเบิกรายวันเครื่องที่เลยกำหนดสอบเทียบ', 'Block daily borrowing of instruments past calibration due'), s.CAL_BLOCK, tr('ข้อมูลสอบเทียบส่วนใหญ่ยังเลยกำหนดหรือไม่มีวันที่ ถ้าเปิดก่อนแก้วันที่ ทีมจะเบิกเครื่องหลักไม่ได้', 'Most calibration dates are past due or missing. Turning this on before fixing them blocks the main instruments.'))}
+    ${yn('s6', tr('แจ้งผู้ดูแลทาง LINE เมื่อมีรายการค้างคืน', 'LINE admins about overdue tickets'), s.NOTIFY_ADMINS_OVERDUE)}
+  </div>
+  <div class="card"><h2>${tr('ชั้น HO และโครงการ', 'HO and projects')}</h2>
+    <label class="l">${tr('โครงการตั้งต้นของพนักงานที่ไม่ได้ระบุโครงการ', 'Default project for employees without one')}</label><select class="t" id="s7">${selOpts((d.projects || []).filter(p => p.code !== 'HO' && !p.closed).map(p => [p.code, p.name && p.name !== p.code ? p.code + ' · ' + p.name : p.code]), s.HOME_PROJECT || 'BPNP')}</select>
+    ${yn('s8', tr('ห้ามจ่าย/โอนเครื่องไปโครงการ ถ้าสอบเทียบเลยกำหนดหรือไม่มีข้อมูล', 'Block issuing/transferring instruments with overdue or missing calibration'), s.HO_CAL_BLOCK || 'TRUE', tr('กติกาเดิมของ Survey Inventory การยืนยันสถานะจริงยังทำได้ แต่ต้องใส่หมายเหตุและถูกติดป้ายในประวัติ', 'Survey Inventory\'s rule. Confirming the actual state still works but needs a note and is flagged in the history.'))}
+  </div>
+  <div class="card"><h2>${tr('ลิงก์', 'Links')}</h2><div class="kv" style="grid-template-columns:1fr">
+    <a href="${esc(d.sheetUrl || 'https://docs.google.com/spreadsheets/d/1IHMkxezi10zE0iHq_TTs_w1dA-v5N5d4K_hnjEGKy3Y/edit')}" target="_blank" rel="noopener">${tr('ชีตฐานข้อมูล', 'Database sheet')} ↗</a>
+    <a href="https://script.google.com/home/projects/1wf65xpZogHopxM4qEDx04UUj81DCeYpgYaLARkfDxuq3ipgLHD4x8HhT/edit" target="_blank" rel="noopener">Apps Script ↗</a>
+    <a href="https://manager.line.biz/account/@076uejbw" target="_blank" rel="noopener">LINE Official Account Manager ↗</a>
+    <span class="hint">LIFF: https://liff.line.me/${CFG.liffId}</span></div></div>`;
+  bar(`<button class="btn" id="ssave">${tr('บันทึกการตั้งค่า', 'Save settings')}</button>`);
+  $('#ssave').onclick = async (e) => {
+    const values = { RETURN_TIME: $('#s1').value, REMIND_BEFORE_MIN: $('#s2').value, OVERDUE_DAILY_HOUR: $('#s3').value, CAL_WARN_DAYS: $('#s4').value, CAL_BLOCK: $('#s5').checked ? 'TRUE' : 'FALSE', NOTIFY_ADMINS_OVERDUE: $('#s6').checked ? 'TRUE' : 'FALSE', HOME_PROJECT: $('#s7').value, HO_CAL_BLOCK: $('#s8').checked ? 'TRUE' : 'FALSE' };
+    e.target.disabled = true;
+    try { S.usersData = await api('settingsSave', { values }); S.usersAt = Date.now(); S.me.settings.returnTime = values.RETURN_TIME; toast(tr('บันทึกการตั้งค่าแล้ว', 'Settings saved')); } catch (x) {}
+    e.target.disabled = false;
+  };
+};
+
+/* act as another user */
+async function startActAs(u) {
+  if (!u) return;
+  if (!confirm(tr(`กดแทน ${u.name}? ทุกอย่างที่ทำจะเป็นชื่อของ ${u.name} และบันทึกว่าคุณเป็นคนกดแทน`, `Act as ${u.name}? Everything you do will be in ${u.name}'s name and logged as done by you.`))) return;
+  S.realMe = S.realMe || S.me;
+  S.asUser = { id: u.lineUserId, name: u.name };
+  try { sessionStorage.setItem('eq_as', JSON.stringify(S.asUser)); } catch (e) {}
+  loading();
+  try { S.me = await api('me'); } catch (e) { stopActAs(); return; }
+  S.cart = []; saveCart();
+  S.stack = []; S.cur = { view: 'home' }; render(); paintStrip();
+}
+function stopActAs() {
+  S.asUser = null;
+  try { sessionStorage.removeItem('eq_as'); } catch (e) {}
+  if (S.realMe) S.me = S.realMe;
+  S.realMe = null; S.cart = []; saveCart();
+  S.stack = [{ view: 'home' }]; S.cur = { view: 'admin', arg: 'users' }; render(); paintStrip();
+}
+function paintStrip() {
+  let s = $('#asStrip');
+  if (!S.asUser) { if (s) s.remove(); document.body.classList.remove('acting'); return; }
+  if (!s) { s = document.createElement('div'); s.id = 'asStrip'; s.className = 'strip'; document.body.prepend(s); }
+  document.body.classList.add('acting');
+  s.innerHTML = `<span class="tag">${tr('กดแทน', 'Acting as')}</span><span class="who">${esc(S.asUser.name)}</span><button id="asExit">${tr('กลับเป็นตัวเอง', 'Back to me')}</button>`;
+  $('#asExit').onclick = stopActAs;
+}
+
+boot();
+</script>
+</body>
+</html>
