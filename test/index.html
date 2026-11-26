@@ -371,6 +371,60 @@ main.anim>*:nth-child(5){animation-delay:.32s}main.anim>*:nth-child(n+6){animati
 .pt.anim{animation:mIn .5s var(--ez) both}
 .pop{animation:pop .7s var(--sp) both}
 .shake{animation:shake .4s ease-out .25s both}
+
+/* ---------- desktop (≥900px) for every screen, not only the back office ----------
+   brand + menu in the header, no phone bottom nav, page title on the left, content uses the width */
+#hnav.unav{display:none}
+.flow{display:flex;flex-direction:column}
+.flow.sf>.fs{order:-1}
+.hgrid{display:flex;flex-direction:column}
+.dsk{display:none}
+@media (min-width:900px){
+  .hin{max-width:1440px;padding:14px 48px;grid-template-columns:auto 1fr auto}
+  .brand,body.back .brand{display:flex}
+  #brand{cursor:pointer}
+  .ht{display:none}
+  .tabs{grid-column:2;grid-row:1;justify-self:center;margin:0}
+  #hnav.unav:not([hidden]){display:flex}
+  .me{display:flex}
+  .nav,body.wide .nav{display:none!important}
+  .pt{max-width:1440px;padding:10px 48px 18px}
+  .pt h1{font-size:34px;line-height:1.3}
+  .pt p{font-size:14px}
+  body.back .pt:not([hidden]){display:block}
+  body:has(#app .ph) .pt,body:has(#app .ptc) .pt{display:none!important}
+  main,body.wide main{max-width:1440px;padding:0 48px 120px}
+  body[data-view=register] main,body[data-view=register] .pt,body[data-view=pending] main,body[data-view=pending] .pt{max-width:736px}
+  body[data-view=pickReturn] main,body[data-view=asset] main,body[data-view=pickReturn] .pt,body[data-view=asset] .pt{max-width:976px}
+  .bar{left:50%;right:auto;bottom:20px;transform:translateX(-50%);border-radius:20px;box-shadow:var(--e2);animation:none;padding:10px}
+  .bar .in{max-width:none}.bar .btn{min-width:220px}
+  .toast{bottom:100px}
+  .chips.scroll{margin:0;padding:0;flex-wrap:wrap}
+  .ptc h1{font-size:28px}
+  .dsk{display:block}.mob{display:none!important}
+  /* two-column flows: main on the left, the scan / QR / summary on the right and kept in view */
+  .flow{display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:0 20px;align-items:start}
+  .flow>.fm{grid-column:1;grid-row:1}
+  .flow>.fs{grid-column:2;grid-row:1;position:sticky;top:96px}
+  /* home: actions across the top, then your loan and the checker queue side by side */
+  .hgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 20px;align-items:start;grid-template-areas:"tiles tiles" "stats stats" "loans queue"}
+  .hgrid.user{grid-template-areas:"tiles tiles" "loans side"}
+  .hgrid>.h-tiles{grid-area:tiles}.hgrid>.h-stats{grid-area:stats}.hgrid>.h-loans{grid-area:loans}.hgrid>.h-queue{grid-area:queue}.hgrid>.h-side{grid-area:side}
+  .h-tiles .tiles{gap:16px}
+  .h-tiles .tile{flex-direction:row;align-items:center;justify-content:flex-start;min-height:96px;padding:18px 20px;gap:16px}
+  .h-tiles .tile .iw{width:48px;height:48px;border-radius:14px}
+  .h-tiles .tile .iw svg.i{width:24px;height:24px}
+  .h-tiles .tile b{font-size:17px}.h-tiles .tile .s{font-size:13px;margin-top:2px}
+  .h-tiles .tile .n{top:50%;transform:translateY(-50%);right:20px;min-width:26px;height:26px;font-size:13px}
+  .h-stats{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:stretch;margin:0 0 12px}
+  .h-stats .stats{margin:0;gap:16px}
+  .h-stats #tScanT{margin:0!important;height:auto;padding:0 32px}
+  .mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:0 16px}
+  .steps{counter-reset:st;display:flex;flex-direction:column;gap:12px;margin:4px 0 2px}
+  .steps>div{display:flex;gap:12px;align-items:flex-start}
+  .steps>div::before{counter-increment:st;content:counter(st);flex:none;width:28px;height:28px;border-radius:999px;background:var(--redt);color:var(--red);font-weight:700;font-size:13px;display:grid;place-items:center}
+  .steps b{display:block;font-size:14px}.steps span{font-size:12.5px;color:var(--mut)}
+}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.15s!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:.15s!important}}
 </style>
 </head>
@@ -515,16 +569,36 @@ const cardHead = (icon, label, right) => `<div class="ch kh"><span class="cl">${
 function setTop(title, canBack, sub) {
   document.body.classList.toggle('back', !!canBack);
   $('#title').textContent = canBack ? title : '';
-  $('#ph1').textContent = canBack ? '' : title;
-  $('#pt').hidden = !!canBack || !title;
+  // the page title is also shown on wide screens for sub-pages (CSS hides it on phones, where the header carries it)
+  $('#ph1').textContent = title || '';
+  $('#pt').hidden = !title;
   $('#psub').textContent = sub || ''; $('#psub').hidden = !sub;
   $('#lang').textContent = S.lang === 'en' ? 'TH' : 'EN';
-  $('#hnav').hidden = true; $('#hnav').innerHTML = '';
+  paintUserTabs();
   const reader = S.me && S.me.user && canRead();
   const n = reader ? (S.me.overdue || 0) + (S.me.pendingUsers || 0) + (S.me.openIssues || 0) : 0;
   $('#bell').hidden = !reader; $('#bellN').hidden = !n; $('#bellN').textContent = n > 99 ? '99+' : n;
   const u = S.me && S.me.user;
   $('#meChip').innerHTML = u ? `${avatar(u.nickname || u.name)}<span><b>${esc(u.nickname || u.name)}</b><span>${esc(ROLE_TH[u.role] ? tr(ROLE_TH[u.role][0], ROLE_TH[u.role][1]) : u.role)}</span></span>` : '';
+}
+/* desktop header menu for the everyday screens (phones use the bottom nav); the back office replaces it with its own tabs */
+const UTAB = { home: 'home', borrow: 'borrow', details: 'borrow', return: 'return', pickReturn: 'return', mine: 'mine', ticket: 'mine', admin: 'admin' };
+function paintUserTabs() {
+  const nav = $('#hnav'), u = S.me && S.me.user;
+  nav.classList.add('unav'); nav.dataset.mode = 'user';
+  if (!u || u.status !== 'ACTIVE' || !S.me.registered) { nav.hidden = true; nav.innerHTML = ''; return; }
+  const cur = UTAB[S.cur ? S.cur.view : 'home'] || '';
+  const items = [['home', 'home', tr('หน้าแรก', 'Home')], ['borrow', 'scan', tr('ยืม', 'Borrow')], ['return', 'ret', tr('คืน', 'Return')], ['mine', 'box', tr('ของที่ยืม', 'My items')]];
+  if (canRead()) items.push(['admin', 'dashboard', tr('หลังบ้าน', 'Back office')]);
+  const cartN = S.cart ? S.cart.reduce((a, g) => a + g.items.filter(i => i.sel && i.ok).length, 0) : 0;
+  nav.innerHTML = items.map(([k, g, l]) => `<button class="${k === cur ? 'on' : ''}" data-utab="${k}">${ic(g)}<span>${esc(l)}</span>${k === 'borrow' && cartN ? `<span class="n">${cartN}</span>` : ''}</button>`).join('');
+  nav.hidden = false;
+  nav.querySelectorAll('[data-utab]').forEach(b => b.onclick = () => {
+    const k = b.dataset.utab;
+    if (k === 'home') return home();
+    if (k === 'return') return startReturn();
+    S.stack = [{ view: 'home' }]; S.cur = { view: k }; S.anim = true; render(); window.scrollTo(0, 0);
+  });
 }
 function bar(html) {
   S.barTouched = true;
@@ -537,6 +611,7 @@ function go(view, arg, replace) { if (!replace && S.cur) S.stack.push(S.cur); S.
 function back() { closeSheet(); const p = S.stack.pop(); if (!p) { S.cur = { view: 'home' }; } else S.cur = p; S.anim = true; render(); }
 function home() { S.stack = []; S.cur = { view: 'home' }; S.anim = true; render(); window.scrollTo(0, 0); }
 $('#back').onclick = back;
+$('#brand').onclick = () => { if (S.me && S.me.user && S.me.user.status === 'ACTIVE' && S.me.registered) home(); };
 $('#bell').onclick = () => go('admin');
 $('#lang').onclick = async () => { S.lang = S.lang === 'en' ? 'th' : 'en'; document.documentElement.lang = S.lang; try { localStorage.setItem('eq_lang', S.lang); } catch (e) {} render(); if (S.me && S.me.registered) api('setLang', { lang: S.lang }).catch(() => {}); };
 
@@ -679,6 +754,7 @@ const WIDE = { admin: 1, assetAdmin: 1, assetEdit: 1, empEdit: 1, move: 1 };
 function render() {
   const v = S.cur ? S.cur.view : 'home';
   document.body.classList.toggle('wide', !!WIDE[v]);
+  document.body.dataset.view = v;
   const f = VIEWS[v] || VIEWS.home;
   closeSheet();
   app.classList.toggle('anim', !!S.anim);
@@ -898,15 +974,25 @@ VIEWS.home = () => {
   setTop(tr('สวัสดี คุณ', 'Hello, ') + nm, false, proj + (canRead() && ROLE_TH[u.role] ? ' · ' + tr(ROLE_TH[u.role][0], ROLE_TH[u.role][1]) : ''));
   const open = (m.openTickets || []).slice().sort(urgency);
   const cartN = selCodes().length, outN = open.reduce((a, t) => a + t.items - t.returned, 0);
-  app.innerHTML = `
-  ${isStaff() ? `<div id="staffBox"><div class="stats">${['amber', 'blue', 'red'].map(c => `<div class="stat ${c}"><span>&nbsp;</span><b>–</b><i>&nbsp;</i></div>`).join('')}</div></div>` : ''}
-  ${open.length ? loanCard(open[0], { emph: true }) : `<div class="card">${cardHead('ticket', tr('ใบเบิกของคุณ', 'Your ticket'))}<div class="empty">${tr('ยังไม่มีอุปกรณ์ที่ยืมอยู่ — กด "สแกนยืม" เพื่อเริ่ม', 'Nothing on loan. Tap Borrow to start.')}</div></div>`}
-  <div class="tiles">
-    <button class="tile main" id="tBorrow"><span class="iw">${ic('scan')}</span>${cartN ? `<span class="n">${cartN}</span>` : ''}<b>${tr('สแกนยืม', 'Borrow')}<span class="s">${cartN ? tr('ในตะกร้า', 'in cart') : tr('สแกน QR', 'Scan QR')}</span></b></button>
-    <button class="tile" id="tReturn"><span class="iw">${ic('ret')}</span>${outN ? `<span class="n">${outN}</span>` : ''}<b>${tr('คืนของ', 'Return')}<span class="s">${open.length ? tr(`ค้าง ${open.length} ใบ`, `${open.length} open`) : tr('ไม่มีค้าง', 'None open')}</span></b></button>
-    <button class="tile" id="tRepeat"><span class="iw">${ic('rep')}</span><b>${tr('ยืมชุดเดิม', 'Same as last')}<span class="s">${tr('รายการล่าสุด', 'Last list')}</span></b></button>
+  const staff = isStaff();
+  // phones: queue, your loan, actions, other loans · wide screens: actions across the top, then loan | queue (CSS grid areas)
+  app.innerHTML = `<div class="hgrid ${staff ? '' : 'user'}">
+  ${staff ? `<div class="h-stats" id="sbStats"><div class="stats">${['amber', 'blue', 'red'].map(c => `<div class="stat ${c}"><span>&nbsp;</span><b>–</b><i>&nbsp;</i></div>`).join('')}</div></div><div class="h-queue" id="sbQueue"></div>` : ''}
+  <div class="h-loans">
+    ${open.length ? loanCard(open[0], { emph: true }) : `<div class="card">${cardHead('ticket', tr('ใบเบิกของคุณ', 'Your ticket'))}<div class="empty">${tr('ยังไม่มีอุปกรณ์ที่ยืมอยู่ — กด "สแกนยืม" เพื่อเริ่ม', 'Nothing on loan. Tap Borrow to start.')}</div></div>`}
+    ${open.length > 1 ? `<div class="card">${cardHead('ticket', tr('ใบเบิกที่ยังไม่คืน', 'Still on loan'), `<button class="lnk" id="tMine">${tr('ทั้งหมด', 'All')}${ic('right')}</button>`)}${open.slice(1).map(t => tRow(t)).join('')}</div>` : ''}
   </div>
-  ${open.length > 1 ? `<div class="card">${cardHead('ticket', tr('ใบเบิกที่ยังไม่คืน', 'Still on loan'), `<button class="lnk" id="tMine">${tr('ทั้งหมด', 'All')}${ic('right')}</button>`)}${open.slice(1).map(t => tRow(t)).join('')}</div>` : ''}`;
+  <div class="h-tiles"><div class="tiles">
+    <button class="tile main" id="tBorrow"><span class="iw">${ic('scan')}</span>${cartN ? `<span class="n">${cartN}</span>` : ''}<b>${tr('สแกนยืม', 'Borrow')}<span class="s">${cartN ? tr('ในตะกร้า', 'in cart') : `<span class="mob">${tr('สแกน QR', 'Scan QR')}</span><span class="dsk">${tr('สแกน QR บนกล่องหรือพิมพ์รหัส', 'Scan a QR or type a code')}</span>`}</span></b></button>
+    <button class="tile" id="tReturn"><span class="iw">${ic('ret')}</span>${outN ? `<span class="n">${outN}</span>` : ''}<b>${tr('คืนของ', 'Return')}<span class="s">${open.length ? tr(`ค้าง ${open.length} ใบ`, `${open.length} open`) : tr('ไม่มีค้าง', 'None open')}</span></b></button>
+    <button class="tile" id="tRepeat"><span class="iw">${ic('rep')}</span><b>${tr('ยืมชุดเดิม', 'Same as last')}<span class="s"><span class="mob">${tr('รายการล่าสุด', 'Last list')}</span><span class="dsk">${tr('ใส่รายการล่าสุดลงตะกร้า', 'Put your last list in the cart')}</span></span></b></button>
+  </div></div>
+  ${staff ? '' : `<div class="h-side dsk"><div class="card">${cardHead('info', tr('ยืม–คืนใน 3 ขั้น', 'Borrow and return in 3 steps'))}<div class="steps">
+    <div><div><b>${tr('สแกน QR บนกล่อง', 'Scan the QR on the case')}</b><span>${tr('ได้ทั้งชุด แล้วติ๊กเฉพาะชิ้นที่หยิบจริง', 'You get the whole set, then tick only what you take')}</span></div></div>
+    <div><div><b>${tr('เลือกกำหนดคืน แล้วออกใบเบิก', 'Pick a return time and create the ticket')}</b><span>${tr('ระบบเตือนทาง LINE ก่อนครบกำหนด', 'LINE reminds you before it is due')}</span></div></div>
+    <div><div><b>${tr('ให้ผู้ตรวจรับสแกน QR ใบเบิก', 'Let a checker scan the ticket QR')}</b><span>${tr('ตอนรับของและตอนคืน แทนการเซ็นกระดาษ', 'When you pick up and when you return, instead of signing paper')}</span></div></div>
+  </div></div></div>`}
+  </div>`;
   $('#tBorrow').onclick = () => go('borrow');
   $('#tReturn').onclick = startReturn;
   $('#tRepeat').onclick = repeatLast;
@@ -914,22 +1000,24 @@ VIEWS.home = () => {
   $$('[data-rt]').forEach(b => b.onclick = () => go('return', b.dataset.rt));
   bindTk();
   paintNav('home');
-  if (isStaff()) staffBox();
+  if (staff) staffBox();
 };
 /* checker queue on the home page: waiting for hand-over, returned but not received, overdue */
 async function staffBox() {
-  let o; try { o = await api('overview', {}, { quiet: true }); } catch (e) { const b = $('#staffBox'); if (b) b.remove(); return; }
-  const box = $('#staffBox'); if (!box) return;
+  let o; try { o = await api('overview', {}, { quiet: true }); } catch (e) { ['#sbStats', '#sbQueue'].forEach(x => { const b = $(x); if (b) b.remove(); }); return; }
+  const sb = $('#sbStats'), q = $('#sbQueue'); if (!sb || !q) return;
   const waitOut = o.open.filter(t => t.out === false && !t.returned), late = o.open.filter(t => t.overdue), recv = o.recv || [];
   const st = (c, l, n, k) => `<button class="stat ${c}" data-sq="${k}"><span>${l}</span><b>${n}</b><i>${tr('ใบเบิก', 'tickets')}</i></button>`;
   const list = (rows, empty) => rows.length ? rows.slice(0, 4).map(t => tRow(t, true)).join('') : `<div class="empty">${empty}</div>`;
-  box.innerHTML = `<div class="stats">${st('amber', tr('รอส่งมอบ', 'To hand over'), waitOut.length, 'out')}${st('blue', tr('รอรับคืน', 'To receive'), recv.length, 'recv')}${st('red', tr('เลยกำหนด', 'Overdue'), late.length, 'late')}</div>
-    <button class="btn" id="tScanT" style="margin-bottom:12px">${ic('scan')}${tr('สแกนใบเบิก', 'Scan a ticket')}</button>
-    <div class="card">${cardHead('ticket', tr('รอส่งมอบ', 'Waiting for hand-over'), `<button class="lnk" data-tk="open">${tr('ทั้งหมด', 'All')}${ic('right')}</button>`)}${list(waitOut, tr('ไม่มีใบที่รอส่งมอบ', 'Nothing waiting'))}</div>
-    ${recv.length || late.length ? `<div class="card">${cardHead('ret', tr('รอรับคืน / เลยกำหนด', 'To receive / overdue'), `<button class="lnk" data-tk="overdue">${tr('ทั้งหมด', 'All')}${ic('right')}</button>`)}${list(recv.concat(late.filter(t => !recv.find(r => r.ticketId === t.ticketId))), '')}</div>` : ''}`;
+  sb.innerHTML = `<div class="stats">${st('amber', tr('รอส่งมอบ', 'To hand over'), waitOut.length, 'out')}${st('blue', tr('รอรับคืน', 'To receive'), recv.length, 'recv')}${st('red', tr('เลยกำหนด', 'Overdue'), late.length, 'late')}</div>
+    <button class="btn" id="tScanT" style="margin-bottom:12px">${ic('scan')}${tr('สแกนใบเบิก', 'Scan a ticket')}</button>`;
+  q.innerHTML = `<div class="card">${cardHead('ticket', tr('รอส่งมอบ', 'Waiting for hand-over'), `<button class="lnk" data-tk="open">${tr('ทั้งหมด', 'All')}${ic('right')}</button>`)}${list(waitOut, tr('ไม่มีใบที่รอส่งมอบ', 'Nothing waiting'))}</div>
+    <div class="card">${cardHead('ret', tr('รอรับคืน / เลยกำหนด', 'To receive / overdue'), `<button class="lnk" data-tk="overdue">${tr('ทั้งหมด', 'All')}${ic('right')}</button>`)}${list(recv.concat(late.filter(t => !recv.find(r => r.ticketId === t.ticketId))), tr('ไม่มีของรอรับคืน', 'Nothing to receive'))}</div>`;
   $('#tScanT').onclick = staffScan;
-  box.querySelectorAll('[data-tk]').forEach(b => b.onclick = () => { S.tf = Object.assign({}, S.tf, { status: b.dataset.tk }); go('admin', 'tickets'); });
-  box.querySelectorAll('[data-sq]').forEach(b => b.onclick = () => { S.tf = Object.assign({}, S.tf, { status: b.dataset.sq === 'late' ? 'overdue' : 'open' }); go('admin', 'tickets'); });
+  [sb, q].forEach(box => {
+    box.querySelectorAll('[data-tk]').forEach(b => b.onclick = () => { S.tf = Object.assign({}, S.tf, { status: b.dataset.tk }); go('admin', 'tickets'); });
+    box.querySelectorAll('[data-sq]').forEach(b => b.onclick = () => { S.tf = Object.assign({}, S.tf, { status: b.dataset.sq === 'late' ? 'overdue' : 'open' }); go('admin', 'tickets'); });
+  });
   bindTk();
 }
 
@@ -959,11 +1047,14 @@ const selCodes = () => S.cart.flatMap(g => g.items.filter(i => i.sel && i.ok).ma
 VIEWS.borrow = () => {
   setTop(tr('ตะกร้ายืม', 'Borrow cart'), true);
   const n = selCodes().length;
-  app.innerHTML = `
+  app.innerHTML = `<div class="flow sf"><div class="fs">
   <div class="card"><button class="btn" id="scan">${ic('scan')}${tr('สแกน QR บนกล่องหรือชิ้น', 'Scan a case or item QR')}</button>
     <div class="row" style="margin-top:10px"><input class="t grow" id="code" placeholder="${tr('หรือพิมพ์รหัส เช่น UN-SV-GN-001-RC-001', 'or type a code, e.g. UN-SV-GN-001-RC-001')}" autocapitalize="characters"><button class="btn small ghost" id="add" style="min-height:48px">${tr('เพิ่ม', 'Add')}</button></div>
-    ${S.cart.length ? `<div class="row" style="justify-content:space-between;margin-top:12px"><span class="hint">${tr('สแกนกล่อง = ได้ทั้งชุด', 'Scan a case to get the whole set')}</span><button class="lnk mut" id="clr">${ic('trash')}${tr('ล้างตะกร้า', 'Clear')}</button></div>` : ''}</div>
-  ${S.cart.length ? S.cart.map(cartGroup).join('') : `<div class="card empty">${tr('ยังไม่มีอุปกรณ์ในตะกร้า สแกน QR บนกล่องเพื่อดึงทั้งชุด หรือสแกนทีละชิ้น', 'The cart is empty. Scan the case QR for a whole set, or scan items one by one.')}</div>`}`;
+    ${S.cart.length ? `<div class="row" style="justify-content:space-between;margin-top:12px"><span class="hint">${tr('สแกนกล่อง = ได้ทั้งชุด', 'Scan a case to get the whole set')}</span><button class="lnk mut" id="clr">${ic('trash')}${tr('ล้างตะกร้า', 'Clear')}</button></div>` : ''}
+    <div class="tiny dsk" style="margin-top:10px">${tr('บนคอมพิวเตอร์ พิมพ์รหัสที่อยู่ใต้ QR แล้วกด Enter หรือกดสแกนเพื่อใช้กล้องของเครื่อง', 'On a computer, type the code printed under the QR and press Enter, or use Scan for the computer camera')}</div></div>
+  </div><div class="fm">
+  ${S.cart.length ? S.cart.map(cartGroup).join('') : `<div class="card empty">${tr('ยังไม่มีอุปกรณ์ในตะกร้า สแกน QR บนกล่องเพื่อดึงทั้งชุด หรือสแกนทีละชิ้น', 'The cart is empty. Scan the case QR for a whole set, or scan items one by one.')}</div>`}
+  </div></div>`;
   bar(`<button class="btn" id="next" ${n ? '' : 'disabled'}>${tr('ถัดไป', 'Next')} · ${n} ${tr('ชิ้น', n === 1 ? 'item' : 'items')}</button>`);
   $('#scan').onclick = async () => { const v = await scanOnce(); if (v) scanned(v, 'borrow'); };
   $('#add').onclick = () => { const v = $('#code').value.trim(); if (v) scanned(v, 'borrow'); };
@@ -1022,17 +1113,17 @@ VIEWS.details = () => {
   const proj = S.me.user.project || '';
   app.innerHTML = `
   ${ptitle(tr('ยืมไปใช้ที่ไหน ถึงเมื่อไร', 'Where and until when'))}
-  <div class="card">
+  <div class="flow"><div class="fm"><div class="card">
     <label class="l">${tr('โครงการ', 'Project')}</label><select class="t" disabled><option>${esc(proj || '–')}</option></select><div class="help">${tr('ยืมได้เฉพาะของที่อยู่โครงการที่คุณสังกัด', 'You can only borrow equipment kept at your project')}</div>
     <label class="l">${tr('กำหนดคืน', 'Return by')}</label><div class="chips">${opts.map(o => `<button class="chip ${S.due === o[0] ? 'on' : ''}" data-due="${o[0]}">${esc(o[1])}</button>`).join('')}</div>
     <div class="help" id="dueTxt"></div>
     <div id="cw" ${S.due === 'custom' ? '' : 'hidden'}><label class="l">${tr('วันและเวลาคืน', 'Return date and time')}</label><input class="t" type="datetime-local" id="dt" value="${iso(at(1)).slice(0, 16)}"></div>
     <label class="l">${tr('ใช้งานที่ / หน้างาน (ไม่บังคับ)', 'Site (optional)')}</label><input class="t" id="site" value="${esc(site)}" placeholder="${tr('เช่น สำรวจแนวเส้นทาง กม. 12+400', 'e.g. route survey km 12+400')}">
     <label class="l">${tr('งานที่ใช้ / หมายเหตุ (ไม่บังคับ)', 'Purpose / note (optional)')}</label><input class="t" id="pur" placeholder="${tr('เช่น วางหมุด, Drone survey', 'e.g. setting control points')}">
-  </div>
-  <div class="card">${cardHead('layers', tr('สรุป', 'Summary'))}<dl class="kv">
+  </div></div>
+  <div class="fs"><div class="card">${cardHead('layers', tr('สรุป', 'Summary'))}<dl class="kv">
     ${S.cart.map(g => { const s = g.items.filter(i => i.sel && i.ok); return s.length ? `<dt>${esc(g.name)}</dt><dd>${s.length} ${tr('ชิ้น', 'item(s)')}${g.type === 'kit' && s.length < g.items.length ? ' · ' + tr('ไม่ครบชุด', 'partial set') : ''}</dd>` : ''; }).join('')}
-    <dt>${tr('ผู้ยืม', 'Borrower')}</dt><dd>${esc(S.me.user.name)}</dd><dt>${tr('ส่งมอบโดย', 'Handed over by')}</dt><dd>${tr('ผู้ตรวจรับ', 'a checker')}${proj ? ' ' + esc(proj) : ''}</dd></dl></div>`;
+    <dt>${tr('ผู้ยืม', 'Borrower')}</dt><dd>${esc(S.me.user.name)}</dd><dt>${tr('ส่งมอบโดย', 'Handed over by')}</dt><dd>${tr('ผู้ตรวจรับ', 'a checker')}${proj ? ' ' + esc(proj) : ''}</dd></dl></div></div></div>`;
   bar(`<button class="btn" id="ok">${tr('ออกใบเบิก', 'Create ticket')} · ${codes.length} ${tr('ชิ้น', 'items')}</button>`);
   const showDue = () => { const o = opts.find(x => x[0] === S.due); $('#dueTxt').textContent = o && o[2] ? tr('คืนภายใน ', 'Return by ') + fdl(iso(o[2])) + ' ' + rt : ''; };
   showDue();
@@ -1092,10 +1183,11 @@ VIEWS.ticket = async (id) => {
     const tag = chk ? 'label' : 'div';
     return `<${tag} class="item ${i.returnedAt && i.cond !== 'OK' ? '' : ''}">${chk ? `<input type="checkbox" class="chk" data-ck="${esc(i.code)}" ${cur.ck[i.code] ? 'checked' : ''}>` : ''}<span class="th ${i.returnedAt && i.cond !== 'OK' ? 'red' : ''}">${ic(thumbIc(i.code))}</span><span class="grow"><span class="nm" style="display:block">${esc(i.name)}${i.model ? ' · ' + esc(i.model) : ''}</span><span class="cd" style="display:block">${meta}</span>${photoThumbs(i.photos)}</span>${right}</${tag}>`;
   };
-  app.innerHTML = `
+  app.innerHTML = `<div class="flow sf"><div class="fs">
   ${hero}
-  ${isStaff() && bad.length ? alertBox('warn', tr(`ผู้ยืมแจ้งชำรุด/สูญหาย ${bad.length} ชิ้น — ตรวจของจริงก่อนยืนยัน`, `${bad.length} item(s) reported damaged or lost. Check them before confirming.`)) : ''}
   <div class="card center"><div class="qr">${qr}</div><div class="tid" id="tid">${esc(t.ticketId)}</div><div class="pills" style="justify-content:center">${status}${toRecv.length && !isStaff() ? pill('b-ok', tr('ปกติ ', 'OK ') + toRecv.filter(i => i.cond === 'OK').length) + (bad.length ? pill('b-bad', tr('ชำรุด/หาย ', 'Damaged/lost ') + bad.length) : '') : ''}</div></div>
+  </div><div class="fm">
+  ${isStaff() && bad.length ? alertBox('warn', tr(`ผู้ยืมแจ้งชำรุด/สูญหาย ${bad.length} ชิ้น — ตรวจของจริงก่อนยืนยัน`, `${bad.length} item(s) reported damaged or lost. Check them before confirming.`)) : ''}
   ${handover ? `<div class="card"><div class="ch"><b>${tr('ตรวจแล้ว', 'Checked')} ${ckN} / ${out.length}</b>${ckN === out.length ? pill('b-ok', tr('ครบแล้ว', 'All checked')) : `<button class="lnk" id="ckAll">${tr('ติ๊กทั้งหมด', 'Tick all')}</button>`}</div><div class="prog ${ckN === out.length ? 'done' : ''}"><i style="width:${Math.round(ckN * 100 / out.length)}%"></i></div><div class="tiny">${tr('สแกน QR ที่ตัวอุปกรณ์เพื่อติ๊ก หรือแตะติ๊กเอง', 'Scan the QR on each item to tick it, or tap to tick')}</div></div>` : ''}
   <div class="card"><dl class="kv">
     <dt>${tr('ผู้ยืม', 'Borrower')}</dt><dd>${esc(t.name)}</dd>
@@ -1106,7 +1198,8 @@ VIEWS.ticket = async (id) => {
     ${t.closedAt ? `<dt>${tr('คืนครบ', 'Returned')}</dt><dd>${esc(fdt(t.closedAt))}</dd>` : ''}
   </dl></div>
   <div class="card">${cardHead('layers', tr('อุปกรณ์', 'Items') + ` · ${t.items_.length - out.length}/${t.items_.length} ` + tr('คืนแล้ว', 'returned'))}
-  ${Object.keys(groups).map(k => `${k !== '_' ? `<div class="hint" style="margin-top:6px;font-weight:600;display:flex;gap:6px;align-items:center">${ic('layers')}${esc((t.kits || {})[k] || k)}</div>` : ''}${groups[k].map(i => row(i, handover && !i.returnedAt)).join('')}`).join('')}</div>`;
+  ${Object.keys(groups).map(k => `${k !== '_' ? `<div class="hint" style="margin-top:6px;font-weight:600;display:flex;gap:6px;align-items:center">${ic('layers')}${esc((t.kits || {})[k] || k)}</div>` : ''}${groups[k].map(i => row(i, handover && !i.returnedAt)).join('')}`).join('')}</div>
+  </div></div>`;
   const btns = [];
   if (handover) btns.push(`<button class="btn sec" id="ckScan">${ic('scan')}${tr('สแกนชิ้นถัดไป', 'Scan next')}</button><button class="btn" id="co">${tr('ยืนยันส่งมอบ', 'Confirm hand-over')}</button>`);
   if (isStaff() && toRecv.length) btns.push(`<button class="btn" id="rc">${tr('ยืนยันรับคืน', 'Confirm received')} ${toRecv.length} ${tr('ชิ้น', 'items')}</button>`);
@@ -1183,7 +1276,7 @@ VIEWS.return = async (id) => {
   const kitName = Object.values(t.kits || {})[0];
   app.innerHTML = `
   ${ptitle(kitName || t.ticketId, `${t.ticketId} · ${tr('ติ๊กชิ้นที่คืนวันนี้ แล้วบอกสภาพ', 'tick what you return now and set its condition')}`)}
-  <div class="card">${cardHead('ret', tr(`คืน ${n} จาก ${out.length} ชิ้น`, `Returning ${n} of ${out.length}`), `<button class="lnk" id="all">${n === out.length ? tr('ไม่เลือกทั้งหมด', 'Untick all') : tr('เลือกทั้งหมด', 'Tick all')}</button>`)}
+  <div class="flow"><div class="fm"><div class="card">${cardHead('ret', tr(`คืน ${n} จาก ${out.length} ชิ้น`, `Returning ${n} of ${out.length}`), `<button class="lnk" id="all">${n === out.length ? tr('ไม่เลือกทั้งหมด', 'Untick all') : tr('เลือกทั้งหมด', 'Tick all')}</button>`)}
     <button class="btn small sec" id="sc" style="margin-bottom:4px">${ic('scan')}${tr('สแกนติ๊กทีละชิ้น', 'Scan to tick')}</button>
     ${out.map(i => { const r = R[i.code]; return `<div class="ritem"><label class="item"><input type="checkbox" class="chk" data-c="${esc(i.code)}" ${r.on ? 'checked' : ''}><span class="th ${r.on && r.cond !== 'OK' ? 'red' : ''}">${ic(thumbIc(i.code))}</span><span class="grow"><span class="nm" style="display:block">${esc(i.name)}${i.model ? ' · ' + esc(i.model) : ''}</span><span class="cd" style="display:block">${esc(i.code)}</span></span></label>
     ${r.on ? `<div class="seg">${Object.keys(COND).map(c => `<button data-cc="${esc(i.code)}" data-v="${c}" class="${r.cond === c ? 'on' : ''} ${c === 'DAMAGED' ? 'd' : c === 'LOST' ? 'lo' : ''}">${esc(tr(COND[c][0], COND[c][1]))}</button>`).join('')}</div>
@@ -1191,8 +1284,11 @@ VIEWS.return = async (id) => {
       <div class="phs">${r.photos.map((p, k) => `<span class="ph-t" style="background-image:url(${p})" data-pv="${esc(i.code)}" data-k="${k}"><button class="x" data-prm="${esc(i.code)}" data-k="${k}" aria-label="remove">${ic('x')}</button></span>`).join('')}
       ${r.photos.length < 3 ? `<label class="ph-add">${ic('camera')}<span>${tr('เพิ่มรูป', 'Add photo')}</span><input type="file" accept="image/*" data-pf="${esc(i.code)}" hidden></label>` : ''}</div>
       <div class="tiny" style="margin-top:4px">${tr('ถ่ายจุดที่เสีย สูงสุด 3 รูป · ผู้ตรวจและผู้ดูแลเห็นรูปนี้', 'Photo of the damage, up to 3 · checkers and admins see it')}</div>` : ''}` : ''}</div>`; }).join('')}
-  </div>
-  ${alertBox('info', tr('คืนไม่ครบก็ได้ ใบเบิกยังเปิดอยู่จนกว่าจะคืนครบ', 'You can return part of it. The ticket stays open until everything is back.'))}`;
+  </div></div>
+  <div class="fs">${(() => { const on = out.filter(i => R[i.code] && R[i.code].on), dmg = on.filter(i => R[i.code].cond === 'DAMAGED').length, lost = on.filter(i => R[i.code].cond === 'LOST').length;
+    return `<div class="card dsk">${cardHead('layers', tr('สรุปการคืน', 'Return summary'))}<dl class="kv"><dt>${tr('ใบเบิก', 'Ticket')}</dt><dd class="mono">${esc(t.ticketId)}</dd><dt>${tr('คืนครั้งนี้', 'Returning now')}</dt><dd>${on.length} / ${out.length} ${tr('ชิ้น', 'items')}</dd><dt>${tr('ชำรุด', 'Damaged')}</dt><dd>${dmg}</dd><dt>${tr('สูญหาย', 'Lost')}</dt><dd>${lost}</dd><dt>${tr('กำหนดคืน', 'Due')}</dt><dd>${esc(fdl(t.dueAt))}</dd></dl></div>`; })()}
+  ${alertBox('info', tr('คืนไม่ครบก็ได้ ใบเบิกยังเปิดอยู่จนกว่าจะคืนครบ', 'You can return part of it. The ticket stays open until everything is back.'))}
+  </div></div>`;
   bar(`<button class="btn" id="ok" ${n ? '' : 'disabled'}>${tr('ยืนยันคืน', 'Confirm return')} · ${n} ${tr('ชิ้น', 'items')}</button>`);
   $$('.chk[data-c]').forEach(c => c.onchange = () => { R[c.dataset.c].on = c.checked; render(); });
   $$('[data-cc]').forEach(b => b.onclick = () => { R[b.dataset.cc].cond = b.dataset.v; render(); });
@@ -1237,9 +1333,9 @@ VIEWS.mine = async () => {
   const list = m.open.slice().sort(urgency).filter(t => f === 'all' || (f === 'late' ? t.overdue : isSoon(t)));
   $('#psub').textContent = tr(`${m.open.length} ใบเบิก · ${m.open.reduce((a, t) => a + t.items - t.returned, 0)} ชิ้น`, `${m.open.length} tickets · ${m.open.reduce((a, t) => a + t.items - t.returned, 0)} items`); $('#psub').hidden = false;
   app.innerHTML = `<div class="chips scroll" style="margin-bottom:12px">${[['all', tr('ทั้งหมด', 'All'), m.open.length], ['soon', tr('ใกล้ครบ', 'Due soon'), m.open.filter(isSoon).length], ['late', tr('เลยกำหนด', 'Overdue'), m.open.filter(t => t.overdue).length]].map(([k, l, n]) => `<button class="chip ${f === k ? 'on' : ''}" data-mf="${k}">${esc(l)}<i>${n}</i></button>`).join('')}</div>
-  ${list.length ? list.map(t => `<div class="card" ${t.overdue ? 'style="box-shadow:inset 0 0 0 1.5px var(--ros),var(--e1)"' : ''}>${cardHead('ticket', t.ticketId, duePill(t))}<h3 style="margin:0;font-size:16.5px;font-weight:600">${esc(t.label || t.ticketId)} · ${t.items - t.returned} ${tr('ชิ้น', 'items')}</h3>
+  ${list.length ? '<div class="mgrid">' + list.map(t => `<div class="card" ${t.overdue ? 'style="box-shadow:inset 0 0 0 1.5px var(--ros),var(--e1)"' : ''}>${cardHead('ticket', t.ticketId, duePill(t))}<h3 style="margin:0;font-size:16.5px;font-weight:600">${esc(t.label || t.ticketId)} · ${t.items - t.returned} ${tr('ชิ้น', 'items')}</h3>
     <div class="hint" style="${t.overdue ? 'color:var(--ros)' : ''}">${tr('ครบกำหนด ', 'Due ')}${esc(fdl(t.dueAt))}${t.site ? ' · ' + esc(t.site) : ''}</div>
-    <div class="btns" style="margin-top:12px"><button class="btn m" data-rt="${esc(t.ticketId)}">${ic('ret')}${tr('คืนใบนี้', 'Return')}</button><button class="btn m sec" data-t="${esc(t.ticketId)}">${tr('รายละเอียด', 'Details')}</button></div></div>`).join('') : `<div class="card empty">${f === 'all' ? tr('ไม่มีอุปกรณ์ที่ยืมอยู่', 'Nothing on loan') : tr('ไม่มีรายการในกลุ่มนี้', 'Nothing in this group')}</div>`}
+    <div class="btns" style="margin-top:12px"><button class="btn m" data-rt="${esc(t.ticketId)}">${ic('ret')}${tr('คืนใบนี้', 'Return')}</button><button class="btn m sec" data-t="${esc(t.ticketId)}">${tr('รายละเอียด', 'Details')}</button></div></div>`).join('') + '</div>' : `<div class="card empty">${f === 'all' ? tr('ไม่มีอุปกรณ์ที่ยืมอยู่', 'Nothing on loan') : tr('ไม่มีรายการในกลุ่มนี้', 'Nothing in this group')}</div>`}
   <div class="card">${cardHead('history', tr('คืนแล้ว (ล่าสุด)', 'Returned (latest)'))}${m.closed.length ? m.closed.map(t => tRow(t)).join('') : `<div class="empty">${tr('ยังไม่มีประวัติ', 'No history yet')}</div>`}</div>`;
   $$('[data-mf]').forEach(b => b.onclick = () => { S.mf = b.dataset.mf; render(); });
   $$('[data-rt]').forEach(b => b.onclick = () => go('return', b.dataset.rt));
@@ -1293,7 +1389,7 @@ function adminTabs(cur) {
   return ADMIN_TABS.filter(x => x[0] !== 'settings' || isAdmin()).map(x => `<button class="${cur === x[0] ? 'on' : ''}" data-tab="${x[0]}">${ic(x[3])}<span>${esc(tr(x[1], x[2]))}</span>${badge[x[0]] ? `<span class="n">${badge[x[0]]}</span>` : ''}</button>`).join('');
 }
 function showTabs(cur) {
-  const nav = $('#hnav'); nav.innerHTML = adminTabs(cur); nav.hidden = false;
+  const nav = $('#hnav'); nav.classList.remove('unav'); nav.dataset.mode = 'admin'; nav.innerHTML = adminTabs(cur); nav.hidden = false;
   nav.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { S.cur = { view: 'admin', arg: b.dataset.tab }; S.anim = true; render(); window.scrollTo(0, 0); });
   const on = nav.querySelector('.on'); if (on && on.scrollIntoView && nav.scrollWidth > nav.clientWidth) nav.scrollLeft = on.offsetLeft - 40;
 }
